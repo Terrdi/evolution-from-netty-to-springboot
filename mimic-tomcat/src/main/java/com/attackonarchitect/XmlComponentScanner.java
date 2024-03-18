@@ -238,4 +238,9 @@ public class XmlComponentScanner implements ComponentScanner {
     public Map<String, Set<String>> getWebFilterComponents() {
         return this.webFilterComponents;
     }
+
+    @Override
+    public Map<String, Integer> getWebFilterComponentsOrder() {
+        return null;
+    }
 }

@@ -11,6 +11,12 @@ import java.io.UnsupportedEncodingException;
 public interface MTResponse {
     void write(String content);
 
+    void write(byte[] bytes, int off, int len);
+
+    default void write(byte[] bytes) {
+        this.write(bytes, 0, bytes.length);
+    }
+
     /**
      * Developers shouldn't call this method
      * @throws UnsupportedEncodingException
