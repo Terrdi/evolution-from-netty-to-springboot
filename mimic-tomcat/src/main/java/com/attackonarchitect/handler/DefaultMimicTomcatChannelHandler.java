@@ -1,5 +1,6 @@
 package com.attackonarchitect.handler;
 
+import com.attackonarchitect.http.HttpMTRequest;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import com.attackonarchitect.ComponentScanner;
@@ -35,10 +36,11 @@ public class DefaultMimicTomcatChannelHandler extends ChannelInboundHandlerAdapt
         RouteStrategy strategy = new RouteMaxMatchStrategy(ServletManagerFactory.getInstance(scanner,servletContext));
         Servlet servlet = strategy.route(uri);
 
-        MTResponse response = new HttpMTResponse(ctx);
+        HttpMTResponse response = new HttpMTResponse(ctx);
         // filter责任链
         Chain filterChain = FilterChainImplFactory.createFilterChain(servlet,uri,scanner);
 
+        response.setRequest((HttpMTRequest) request);
         filterChain.start(request,response);
     }
 

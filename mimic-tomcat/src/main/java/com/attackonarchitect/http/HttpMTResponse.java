@@ -2,6 +2,8 @@ package com.attackonarchitect.http;
 
 import com.attackonarchitect.http.cookie.MTCookie;
 import com.attackonarchitect.http.cookie.MTCookieBuilder;
+import com.attackonarchitect.http.session.MTSession;
+import com.attackonarchitect.http.session.SessionFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -27,6 +29,8 @@ public class HttpMTResponse implements MTResponse{
     protected int statusCode = HttpResponseStatus.OK.code();
 
     private ByteBuf byteBuf;
+
+    private HttpMTRequest request;
 
     public HttpMTResponse(ChannelHandlerContext ctx) {
         this.ctx = ctx;
@@ -71,11 +75,29 @@ public class HttpMTResponse implements MTResponse{
     private ByteBuf resolveByteBuf() {
         ByteBuf ret;
         if (Objects.nonNull(contents) && contents.length() > 0) {
-            ret = Unpooled.copiedBuffer(contents.toString().getBytes(StandardCharsets.UTF_8));
+            String content = contents.toString();
+            if (content.startsWith("<!DOCTYPE html>") || content.startsWith("<html>")) {
+                this.addHeader(HttpHeaderNames.CONTENT_TYPE.toString(), HttpHeaderValues.TEXT_HTML.toString());
+            }
+            ret = Unpooled.copiedBuffer(content.getBytes(StandardCharsets.UTF_8));
         } else {
             ret = Unpooled.EMPTY_BUFFER;
         }
         return ret;
+    }
+
+    private void flushRequestInfo() {
+        if (Objects.isNull(this.request)) {
+            return;
+        }
+
+        // 检查是否存在session
+        if (!this.cookieMap.containsKey(SessionFactory.SESSION_NAME)) {
+            MTSession session = request.getSession();
+            if (Objects.nonNull(session)) {
+                this.setCookie(SessionFactory.SESSION_NAME, session.getId());
+            }
+        }
     }
 
     private void doFlush() throws UnsupportedEncodingException {
@@ -92,6 +114,7 @@ public class HttpMTResponse implements MTResponse{
         headers.set(HttpHeaderNames.CONTENT_TYPE, Optional.ofNullable(this.headers.remove(HttpHeaderNames.CONTENT_TYPE.toString())).orElse("text/plain;charset=utf-8"));
         headers.set(HttpHeaderNames.CONTENT_LENGTH,response.content().readableBytes());
 
+        this.flushRequestInfo();
 
         for (MTCookie cookie : cookieMap.values()) {
             headers.add(HttpHeaderNames.SET_COOKIE, cookie.toString());
@@ -141,5 +164,29 @@ public class HttpMTResponse implements MTResponse{
 
     public void setDelegate(HttpMTFileResponse delegate) {
         this.delegate = delegate;
+    }
+
+    public void setRequest(HttpMTRequest request) {
+        if (Objects.isNull(this.delegate)) {
+            this.request = request;
+        } else {
+            this.delegate.setRequest(request);
+        }
+    }
+
+    /**
+     * 清空当前缓存区
+     */
+    public void clear() {
+        if (Objects.isNull(this.delegate)) {
+            if (Objects.nonNull(this.contents)) {
+                this.contents = new StringBuilder();
+            }
+            if (Objects.nonNull(this.byteBuf)) {
+                this.byteBuf = this.byteBuf.clear();
+            }
+        } else {
+            this.delegate.clear();
+        }
     }
 }

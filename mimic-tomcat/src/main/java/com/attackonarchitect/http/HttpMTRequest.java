@@ -2,7 +2,11 @@ package com.attackonarchitect.http;
 
 import com.attackonarchitect.http.cookie.MTCookie;
 import com.attackonarchitect.http.cookie.MTCookieBuilder;
+import com.attackonarchitect.http.session.MTSession;
+import com.attackonarchitect.http.session.SessionFacade;
+import com.attackonarchitect.http.session.SessionFactory;
 import com.attackonarchitect.utils.AssertUtil;
+import com.attackonarchitect.utils.StringUtil;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import com.attackonarchitect.context.ServletContext;
@@ -169,6 +173,47 @@ public class HttpMTRequest implements MTRequest{
     @Override
     public Iterator<String> getCookieNames() {
         return cookieMap.keySet().iterator();
+    }
+    //endregion
+
+    //region session
+    private MTSession session;
+
+    public MTSession getSession(boolean create) {
+        if (Objects.isNull(session)) {
+            String id = this.getSessionId();
+            boolean noId = StringUtil.isBlank(id);
+            if (noId && create) {
+                session = new SessionFacade(SessionFactory.createSession());
+                id = session.getId();
+                this.setAttribute(SessionFactory.SESSION_NAME, id);
+            } else if (!noId) {
+                session = new SessionFacade(SessionFactory.getSession(id));
+            }
+        }
+
+        return session;
+    }
+
+    public MTSession getSession() {
+        return this.getSession(false);
+    }
+
+    @Override
+    public MTSession openSession() {
+        return this.getSession(true);
+    }
+
+    private String getSessionId() {
+        String sessionId = this.getCookie(SessionFactory.SESSION_NAME);
+        if (StringUtil.isBlank(sessionId)) {
+            sessionId = this.parametersDepot.get(SessionFactory.SESSION_NAME);
+        }
+        if (StringUtil.isBlank(sessionId)) {
+            sessionId = this.getHeader(SessionFactory.SESSION_NAME);
+        }
+
+        return sessionId;
     }
     //endregion
 
