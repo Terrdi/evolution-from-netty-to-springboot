@@ -14,7 +14,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * @description:
  */
-public class DefaultMimicServlet extends MimicServlet{
+public class DefaultMimicServlet extends MimicServlet {
     @Override
     protected void doPost(MTRequest req, MTResponse response) {
 

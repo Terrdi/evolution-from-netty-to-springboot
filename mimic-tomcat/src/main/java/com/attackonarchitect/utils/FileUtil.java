@@ -55,6 +55,7 @@ public interface FileUtil {
     Map<String, AsciiString> BINARY_FILE_TYPE = Collections.unmodifiableMap(new HashMap<String, AsciiString>() {
         {
             this.put("doc", HttpHeaderValues.APPLICATION_OCTET_STREAM);
+            this.put("zip", HttpHeaderValues.APPLICATION_OCTET_STREAM);
         }
     });
 

@@ -1,12 +1,16 @@
 package com.attackonarchitect;
 
 import com.attackonarchitect.servlet.ServletInformation;
+import com.attackonarchitect.utils.FileUtil;
+import com.attackonarchitect.utils.JarClassLoader;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,8 +34,22 @@ public class XmlComponentScanner implements ComponentScanner {
 
     private final String resource;
 
+    private final ClassLoader classLoader;
+
     public XmlComponentScanner(String resource) {
         this.resource = resource;
+
+        final String extension = FileUtil.resolveExtension(resource);
+        if (extension.equalsIgnoreCase("jar")
+                || extension.equalsIgnoreCase("war")) {
+            try {
+                this.classLoader = new JarClassLoader(new File(this.resource));
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            this.classLoader = Thread.currentThread().getContextClassLoader();;
+        }
 
         this.init();
     }
@@ -44,8 +62,13 @@ public class XmlComponentScanner implements ComponentScanner {
         SAXReader reader = new SAXReader();
         Document document = null;
 
+        URL url;
+        if (this.classLoader instanceof JarClassLoader) {
+            url = this.classLoader.getResource("WEB-INF/web.xml");
+        } else {
+            url = this.getClass().getResource(this.resource);
+        }
         try {
-            URL url = this.getClass().getResource(this.resource);
             document = reader.read(url);
         } catch (DocumentException e) {
             throw new RuntimeException(e);
@@ -104,6 +127,7 @@ public class XmlComponentScanner implements ComponentScanner {
                 element.elementText("load-on-startup")));
         servletInformation.setInitParams(this.resolveInitParam(element));
 
+        servletInformation.setClassLoader(this.classLoader);
 
         if (this.webServletComponents.containsKey(servletName)) {
             // 优先解析到了 servlet-mapping, 补充servlet信息

@@ -19,4 +19,10 @@ public interface AssertUtil {
             throw new IllegalStateException(message);
         }
     }
+
+    static void notNull(final Object instance, final String message) {
+        if (Objects.isNull(instance)) {
+            throw new IllegalStateException(message);
+        }
+    }
 }

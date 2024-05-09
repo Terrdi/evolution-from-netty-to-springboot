@@ -6,9 +6,15 @@ import com.attackonarchitect.http.session.MTSession;
 import com.attackonarchitect.http.session.SessionFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedStream;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -32,6 +38,8 @@ public class HttpMTResponse implements MTResponse{
 
     private HttpMTRequest request;
 
+    private boolean sendComplete = false;
+
     public HttpMTResponse(ChannelHandlerContext ctx) {
         this.ctx = ctx;
     }
@@ -54,11 +62,27 @@ public class HttpMTResponse implements MTResponse{
 
     @Override
     public void write(byte[] bytes, int offset, int len) {
-        if (Objects.isNull(this.byteBuf)) {
-            this.byteBuf = Unpooled.buffer(1 << 20);
-        }
+        if (isChunked()) {
+            try {
+                this.doFlush();
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+//                this.ctx.write(new HttpChunkedInput(new ChunkedStream(new ByteArrayInputStream(bytes, offset, len))));
+            this.ctx.write(new DefaultHttpContent(Unpooled.wrappedBuffer(bytes, offset, len)));
 
-        this.byteBuf.writeBytes(bytes, offset, len);
+        } else {
+            if (Objects.isNull(this.byteBuf)) {
+                this.byteBuf = Unpooled.buffer(1 << 20);
+            }
+
+            this.byteBuf.writeBytes(bytes, offset, len);
+        }
+    }
+
+    private boolean isChunked() {
+        String val = this.headers.get(HttpHeaderNames.TRANSFER_ENCODING.toString());
+        return Objects.nonNull(val) && val.equalsIgnoreCase(HttpHeaderValues.CHUNKED.toString());
     }
 
 
@@ -101,9 +125,16 @@ public class HttpMTResponse implements MTResponse{
     }
 
     private void doFlush() throws UnsupportedEncodingException {
+        if (this.sendComplete) {
+            if (this.isChunked()) {
+                this.ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(ChannelFutureListener.CLOSE);
+            }
+            return;
+        }
+
         ByteBuf byteBuf = Optional.ofNullable(this.byteBuf).orElseGet(this::resolveByteBuf);
 
-        DefaultFullHttpResponse response =
+        HttpResponse response =
                 new DefaultFullHttpResponse(
                         HttpVersion.HTTP_1_1,
                         HttpResponseStatus.valueOf(statusCode),
@@ -111,15 +142,6 @@ public class HttpMTResponse implements MTResponse{
                 );
 
         HttpHeaders headers = response.headers();
-        headers.set(HttpHeaderNames.CONTENT_TYPE, Optional.ofNullable(this.headers.remove(HttpHeaderNames.CONTENT_TYPE.toString())).orElse("text/plain;charset=utf-8"));
-        headers.set(HttpHeaderNames.CONTENT_LENGTH,response.content().readableBytes());
-
-        this.flushRequestInfo();
-
-        for (MTCookie cookie : cookieMap.values()) {
-            headers.add(HttpHeaderNames.SET_COOKIE, cookie.toString());
-        }
-
         for (Map.Entry<String, String> header : this.headers.entrySet()) {
             if (headers.contains(header.getKey())) {
                 System.err.println("已经设置的响应消息头: " + header.getKey());
@@ -127,8 +149,28 @@ public class HttpMTResponse implements MTResponse{
                 headers.set(header.getKey(), header.getValue());
             }
         }
+        if (!headers.containsValue(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED, true) &&
+            !headers.contains(HttpHeaderNames.CONTENT_LENGTH)) {
+            headers.set(HttpHeaderNames.CONTENT_TYPE, Optional.ofNullable(this.headers.remove(HttpHeaderNames.CONTENT_TYPE.toString()))
+                .orElse("text/plain;charset=utf-8"));
+            headers.set(HttpHeaderNames.CONTENT_LENGTH, byteBuf.readableBytes());
+        } else {
+            headers.set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+            // 不是一次全部输出
+            response = new DefaultHttpResponse(response.protocolVersion(), response.status(), headers);
+        }
 
-        ctx.writeAndFlush(response);
+        this.flushRequestInfo();
+
+        for (MTCookie cookie : cookieMap.values()) {
+            headers.add(HttpHeaderNames.SET_COOKIE, cookie.toString());
+        }
+
+        ctx.write(response).addListener(new ChannelFutureListener() {
+            public void operationComplete(ChannelFuture future) {
+                HttpMTResponse.this.sendComplete = true;
+            }
+        });
     }
 
     @Override

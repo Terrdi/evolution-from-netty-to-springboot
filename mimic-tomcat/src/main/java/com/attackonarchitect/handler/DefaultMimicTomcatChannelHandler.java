@@ -42,6 +42,7 @@ public class DefaultMimicTomcatChannelHandler extends ChannelInboundHandlerAdapt
 
         response.setRequest((HttpMTRequest) request);
         filterChain.start(request,response);
+        ctx.flush();
     }
 
 

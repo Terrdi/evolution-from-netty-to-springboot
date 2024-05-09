@@ -12,7 +12,7 @@ public class ServletManagerFactory {
     private static ServletManager servletManager;
     public static ServletManager getInstance(ComponentScanner provider, ServletContext servletContext){
         if(servletManager ==null){
-            servletManager=ServletManagerImpl.getInstance(provider,servletContext);
+            servletManager= ServletContainer.getInstance(provider,servletContext);
         }
         return servletManager;
     }

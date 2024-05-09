@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -63,6 +64,7 @@ public class HttpMTFileResponse extends HttpMTResponse {
      * 读取文件并返回
      */
     private void writeFile() {
+        this.clear();
         if (FileUtil.isTextFile(file)) {
             this.writeTextFile();
         } else {
@@ -88,15 +90,34 @@ public class HttpMTFileResponse extends HttpMTResponse {
     }
 
     private void writeBinaryFile() {
-//        this.write("这是一个二进制文件");
+//        final byte[] lineSeparator = "\r\n".getBytes(StandardCharsets.UTF_8);
 
+        this.addHeader(HttpHeaderNames.TRANSFER_ENCODING.toString(), HttpHeaderValues.CHUNKED.toString());
+        // 二进制文件使用Chunk-file
+        try (FileInputStream fis = new FileInputStream(this.file)) {
+            byte[] buffer = new byte[BUFFER_SIZE];
+            for (int offset = fis.read(buffer, 0, BUFFER_SIZE); offset > 0;
+                 offset = fis.read(buffer, 0, BUFFER_SIZE)) {
+//                this.write(Integer.toHexString(offset).getBytes(StandardCharsets.UTF_8));
+//                this.write(lineSeparator);
+                this.write(buffer, 0, offset);
+//                this.write(lineSeparator);
+            }
+//            this.write(Integer.toHexString(0).getBytes(StandardCharsets.UTF_8));
+//            this.write(lineSeparator);
+//            this.write(lineSeparator);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        this.addHeader(HttpHeaderNames.CONTENT_TYPE.toString(),
+                FileUtil.resolveFileType(file));
     }
 
     /**
      * 读取文件夹下的所有文件列表
      */
     private void writeDirectory() {
-        StringBuilder html = new StringBuilder(1024);
+        StringBuilder html = new StringBuilder(BUFFER_SIZE);
         html.append("<html>");
         html.append("<head>");
         html.append("<title>").append(this.file.getName()).append("</title>").append("<meta charset=\"UTF-8\">");

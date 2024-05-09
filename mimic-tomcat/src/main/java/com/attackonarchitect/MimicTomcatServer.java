@@ -55,6 +55,8 @@ public class MimicTomcatServer {
     public void start(String configFile) {
         if (configFile.endsWith(".xml")) {
             scanner = new XmlComponentScanner(configFile);
+        } else if (configFile.endsWith(".jar") || configFile.endsWith(".war")) {
+            scanner = new XmlComponentScanner(configFile);
         } else {
             throw new UnsupportedOperationException("不支持的文件格式:  " + configFile);
         }

@@ -16,7 +16,7 @@
 
 package com.mimic.springframework.beans.factory.config;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 
 /**
  * bean 定义

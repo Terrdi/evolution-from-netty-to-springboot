@@ -10,7 +10,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * @description:
  */
-@WebServlet("/*")
+//@WebServlet("/*")
 public class DefaultServlet extends MimicServlet {
 
 
