@@ -1,5 +1,6 @@
 package com.attackonarchitect;
 
+import com.attackonarchitect.logger.FileLogger;
 import com.attackonarchitect.servlet.ServletManagerFactory;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -71,7 +72,7 @@ public class MimicTomcatServer {
 
     private void doStart() {
         Notifier notifier = new NotifierImpl(Objects.requireNonNull(scanner, "没有找到合适的组件扫描器").getWebListenerComponents());
-        servletContext = ServletContextFactory.getInstance(scanner,notifier);
+        servletContext = ServletContextFactory.getInstance(scanner,notifier, new FileLogger());
         servletContext.setAttribute("notifier",notifier);
 
         //初始化servlet一下，主要是preinit

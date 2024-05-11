@@ -6,6 +6,7 @@ import com.attackonarchitect.filter.chain.FilterChain;
 import com.attackonarchitect.http.MTRequest;
 import com.attackonarchitect.http.MTResponse;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 
@@ -16,7 +17,7 @@ import java.io.UnsupportedEncodingException;
 public class FifthFilter implements Filter {
     @Override
 
-    public boolean doFilter(MTRequest request, MTResponse response, FilterChain filterChain) throws UnsupportedEncodingException {
+    public boolean doFilter(MTRequest request, MTResponse response, FilterChain filterChain) throws IOException {
         response.write("pass filter /hello/b");
         filterChain.start(request, response);
         return true;

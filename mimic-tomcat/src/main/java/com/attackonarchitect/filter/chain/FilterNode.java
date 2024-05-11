@@ -3,6 +3,7 @@ package com.attackonarchitect.filter.chain;
 import com.attackonarchitect.http.MTRequest;
 import com.attackonarchitect.http.MTResponse;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -12,11 +13,10 @@ public class FilterNode  {
     Filter filter;
     FilterNode next;
 
-    public boolean exec(MTRequest request, MTResponse response, FilterChain filterChain) throws UnsupportedEncodingException {
+    public boolean exec(MTRequest request, MTResponse response, FilterChain filterChain) throws IOException {
 //        return filter.doFilter(request,response);
 //        filterChain.start(request, response);
-        filter.doFilter(request, response, filterChain);
-        return true;
+        return filter.doFilter(request, response, filterChain);
     }
 
     public Filter getFilter() {

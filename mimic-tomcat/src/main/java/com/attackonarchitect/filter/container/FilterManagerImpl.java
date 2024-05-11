@@ -52,10 +52,15 @@ public class FilterManagerImpl implements FilterManager{
 
     @Override
     public List<Filter> getSpecifedFilters(String uri) {
+        return filtersMap.computeIfAbsent(uri, this::doGetSpecifiedFilters);
+    }
 
+    private Map<String, List<Filter>> filtersMap = new HashMap<>();
+
+    private List<Filter> doGetSpecifiedFilters(final String uri) {
         List<Filter> ret = new ArrayList<>();
         // matchingFilterUri按匹配的优先级, 从完全匹配到部分匹配 有序排列
-        List<String> matchingFilterUri = FilterUtils.getMatchingFilterUri(uri,this.getAllFilterUri());
+        List<String> matchingFilterUri = FilterUtils.getMatchingFilterUri(uri, this.getAllFilterUri());
 
         Map<String, Set<String>> webFilterComponents = componentScanner.getWebFilterComponents();
 

@@ -1,5 +1,7 @@
 package com.attackonarchitect.context;
 
+import com.attackonarchitect.logger.Logger;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,6 +34,8 @@ public abstract class ContainerBase implements Container {
      * 父容器
      */
     protected Container parent;
+
+    protected Logger logger;
 
     @Override
     public ClassLoader getLoader() {
@@ -112,6 +116,51 @@ public abstract class ContainerBase implements Container {
 
             child.setParent(this);
             children.put(child.getName(), child);
+        }
+    }
+
+    @Override
+    public Logger getLogger() {
+        return Optional.ofNullable(this.logger)
+                .orElseGet(() -> Optional.ofNullable(this.parent)
+                        .map(Container::getLogger).orElse(null));
+    }
+
+    @Override
+    public synchronized void setLogger(Logger logger) {
+        Logger oldLogger = this.logger;
+        if (oldLogger != logger) {
+            this.logger = logger;
+        }
+    }
+
+    protected String logName;
+
+    protected String logName() {
+        return this.logName = Optional.ofNullable(this.logName).orElseGet(() -> {
+            String className = this.getClass().getSimpleName();
+            return className + "[" + this.getName() + "]";
+        });
+    }
+
+    protected void log(String message) {
+        Logger logger = getLogger();
+        final String newMessage = logName() + ": " + message;
+        if (Objects.nonNull(logger)) {
+            logger.log(newMessage);
+        } else {
+            System.out.println(newMessage);
+        }
+    }
+    
+    protected void log(String message, Throwable throwable) {
+        Logger logger = getLogger();
+        final String newMessage = logName() + ": " + message;
+        if (Objects.nonNull(logger)) {
+            logger.log(newMessage, throwable);
+        } else {
+            System.out.println(newMessage);
+            throwable.printStackTrace(System.out);
         }
     }
 }

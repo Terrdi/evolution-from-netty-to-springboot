@@ -2,6 +2,7 @@ package com.attackonarchitect.context;
 
 import com.attackonarchitect.http.HttpMTRequest;
 import com.attackonarchitect.http.HttpMTResponse;
+import com.attackonarchitect.logger.Logger;
 import com.attackonarchitect.servlet.ServletException;
 
 import java.io.IOException;
@@ -86,4 +87,8 @@ public interface Container {
      */
     void invoke(HttpMTRequest request, HttpMTResponse response)
         throws IOException, ServletException;
+
+    Logger getLogger();
+
+    void setLogger(Logger logger);
 }

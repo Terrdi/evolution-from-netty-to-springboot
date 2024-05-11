@@ -131,6 +131,7 @@ public class ServletInformation extends ContainerBase implements Servlet {
                 }
             }
 
+            this.setServletContext(servletContext);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }

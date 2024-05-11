@@ -13,6 +13,7 @@ import com.attackonarchitect.listener.webcontext.ServletContextAttributeEvent;
 import com.attackonarchitect.listener.webcontext.ServletContextAttributeListener;
 import com.attackonarchitect.listener.webcontext.ServletContextEvent;
 import com.attackonarchitect.listener.webcontext.ServletContextListener;
+import com.attackonarchitect.logger.Logger;
 import com.attackonarchitect.servlet.*;
 
 import java.io.IOException;
@@ -32,10 +33,11 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
 
     private static ApplicationContext instance;
 
-    public static ServletContext getInstance(ComponentScanner scanner, Notifier notifier) {
+    public static ServletContext getInstance(ComponentScanner scanner, Notifier notifier, Logger logger) {
         if(instance == null){
             instance = new ApplicationContext(scanner);
             instance.setNotifiler(notifier);
+            instance.setLogger(logger);
             ServletContextEvent sce = new ServletContextEvent();
             sce.setSource(instance);
             sce.setName("servletcontext");
@@ -43,7 +45,7 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
             //因为万一有其他的 ServletContext 实现
             //所以还是放在工厂里面更好感觉。
             notifier.notifyListeners(ServletContextListener.class,sce);
-
+            instance.log("Container created.");
         }
         return instance;
     }

@@ -26,7 +26,7 @@ public class FilterChainImpl implements FilterChain {
     private StandardWrapper targetServlet;
 
     private FilterChainImpl(StandardWrapper targetServlet) {
-        this.targetServlet = targetServlet;
+        this.targetServlet = Objects.requireNonNull(targetServlet, "无法使用空Servlet!");
         tail = head;
     }
 
@@ -68,6 +68,10 @@ public class FilterChainImpl implements FilterChain {
      */
     @Override
     public void start(MTRequest request, MTResponse response) {
+        if (Objects.isNull(targetServlet)) {
+            return;
+        }
+
         // 获取下一个过滤器
         // 如果没有过滤器, 则执行对应的servlet
         currNode = Optional.ofNullable(currNode).orElse(head).getNext();
