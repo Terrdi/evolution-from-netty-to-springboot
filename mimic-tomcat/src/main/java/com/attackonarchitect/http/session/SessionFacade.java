@@ -63,4 +63,19 @@ public class SessionFacade implements MTSession {
     public void invalidate() {
         this.session.invalidate();
     }
+
+    @Override
+    public void access() {
+        this.session.access();
+    }
+
+    @Override
+    public void expire() {
+        this.session.expire();
+    }
+
+    @Override
+    public void recycle() {
+        this.session.recycle();
+    }
 }

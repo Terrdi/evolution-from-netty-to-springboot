@@ -8,7 +8,7 @@ import java.util.Set;
  * @description:
  */
 public interface ServletManager {
-    Servlet getSpecifedServlet(String uri);
+    ServletInformation getSpecifedServlet(String uri);
     Map<String,Servlet> getAllServletMapping(boolean init);
     Set<String> getAllRequestUri();
 }

@@ -11,6 +11,7 @@ import java.util.*;
 /**
  * @description:
  */
+@Deprecated
 public class ServletContainer implements ServletManager {
     private ServletContainer() {
     }
@@ -64,7 +65,7 @@ public class ServletContainer implements ServletManager {
     }
 
     @Override
-    public Servlet getSpecifedServlet(String uri) {
+    public ServletInformation getSpecifedServlet(String uri) {
         if (servletMapping.containsKey(uri)) {
             return servletMapping.get(uri);
         }
@@ -72,10 +73,10 @@ public class ServletContainer implements ServletManager {
         ServletInformation servletInformation = servletInformationMap.get(uri);
 //        Map<String, String> webServletComponents = provider.getWebServletComponents();
 //        String clazzName = webServletComponents.get(uri);
-        Servlet ret;
-        ret = servletInformation.loadServlet();
+//        Servlet ret;
+//        ret = servletInformation.loadServlet();
         servletMapping.put(uri, servletInformation);
-        return ret;
+        return servletInformation;
     }
 
 

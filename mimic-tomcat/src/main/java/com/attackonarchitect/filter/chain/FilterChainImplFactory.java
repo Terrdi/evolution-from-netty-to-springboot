@@ -4,6 +4,7 @@ import com.attackonarchitect.ComponentScanner;
 import com.attackonarchitect.filter.container.FilterManager;
 import com.attackonarchitect.filter.container.FilterManagerImplFactory;
 import com.attackonarchitect.servlet.Servlet;
+import com.attackonarchitect.servlet.StandardWrapper;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public class FilterChainImplFactory {
     private FilterChainImplFactory(){}
 
     
-    public static Chain createFilterChain(Servlet servlet, String uri, ComponentScanner scanner){
+    public static Chain createFilterChain(StandardWrapper servlet, String uri, ComponentScanner scanner){
         // 获取scanner中所有的filter实例
         FilterManager filterManager = FilterManagerImplFactory.getFilterManager(scanner);
         List<Filter> filterList = filterManager.getSpecifedFilters(uri);

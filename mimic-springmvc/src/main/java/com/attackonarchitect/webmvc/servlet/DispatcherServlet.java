@@ -77,12 +77,6 @@ public class DispatcherServlet extends FrameworkServlet {
         }
     }
 
-
-
-    protected void init() {
-
-    }
-
     private Object doInvokeMethod(Method handlerMethod,
                                   Object targetBean,
                                   Map<String, String> params) throws InvocationTargetException, IllegalAccessException {

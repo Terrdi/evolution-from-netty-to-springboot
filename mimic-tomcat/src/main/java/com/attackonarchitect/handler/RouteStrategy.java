@@ -1,11 +1,12 @@
 package com.attackonarchitect.handler;
 
 import com.attackonarchitect.servlet.Servlet;
+import com.attackonarchitect.servlet.ServletInformation;
 
 /**
  * @description:
  */
 
 public interface RouteStrategy {
-    Servlet route(String uri);
+    ServletInformation route(String uri);
 }

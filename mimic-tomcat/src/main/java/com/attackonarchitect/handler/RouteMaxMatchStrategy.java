@@ -1,6 +1,8 @@
 package com.attackonarchitect.handler;
 
+import com.attackonarchitect.context.ServletContext;
 import com.attackonarchitect.servlet.Servlet;
+import com.attackonarchitect.servlet.ServletInformation;
 import com.attackonarchitect.servlet.ServletManager;
 
 import java.util.Set;
@@ -31,10 +33,10 @@ public class RouteMaxMatchStrategy implements RouteStrategy {
      * @return
      */
     @Override
-    public Servlet route(String targetUri) {
+    public ServletInformation route(String targetUri) {
         
         String matchUri=null;
-        Servlet target = null;
+        ServletInformation target = null;
 
         Set<String> allURI = servletManager.getAllRequestUri();
 

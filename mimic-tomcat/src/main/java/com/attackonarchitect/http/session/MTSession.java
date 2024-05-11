@@ -12,6 +12,10 @@ import java.util.Enumeration;
  * @since 1.8
  **/
 public interface MTSession {
+    String SESSION_CREATED_EVENT = "createSession";
+
+    String SESSION_DESTROY_EVENT = "destroySession";
+
     /**
      * 获取创建时间
      */
@@ -85,4 +89,19 @@ public interface MTSession {
      * 将该会话失效
      */
     void invalidate();
+
+    /**
+     * 访问回调
+     */
+    void access();
+
+    /**
+     * 失效回调
+     */
+    void expire();
+
+    /**
+     * 回收回调
+     */
+    void recycle();
 }

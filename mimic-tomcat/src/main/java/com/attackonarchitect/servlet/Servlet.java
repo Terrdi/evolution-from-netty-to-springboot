@@ -15,4 +15,9 @@ public interface Servlet {
     public void service(MTRequest req, MTResponse response) throws UnsupportedEncodingException;
 
     ServletContext getServletContext();
+
+    /**
+     * 初始化方法
+     */
+    void init();
 }

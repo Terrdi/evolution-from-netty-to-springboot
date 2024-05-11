@@ -1,10 +1,14 @@
 package com.attackonarchitect.servlet;
 
+import com.attackonarchitect.context.Container;
+import com.attackonarchitect.context.ContainerBase;
 import com.attackonarchitect.context.ServletContext;
+import com.attackonarchitect.http.HttpMTRequest;
+import com.attackonarchitect.http.HttpMTResponse;
 import com.attackonarchitect.http.MTRequest;
 import com.attackonarchitect.http.MTResponse;
-import com.attackonarchitect.utils.AssertUtil;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -19,7 +23,7 @@ import java.util.Optional;
  *  抽象servlet的信息，包括类名，urlPattern，loadOnStartup，initParams
  *
  */
-public class ServletInformation implements Servlet {
+public class ServletInformation extends ContainerBase implements Servlet {
     private String clazzName;
     private String[] urlPattern;
     private int loadOnStartup;
@@ -130,7 +134,6 @@ public class ServletInformation implements Servlet {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
-
     }
 
     public synchronized Servlet loadServlet() {
@@ -159,6 +162,8 @@ public class ServletInformation implements Servlet {
                         }
                     });
                 }
+
+                this.instance.init();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -177,6 +182,20 @@ public class ServletInformation implements Servlet {
     }
 
     @Override
+    public Container getParent() {
+        return Optional.ofNullable(super.getParent())
+                .orElseGet(this::getServletContext);
+    }
+
+    @Override
+    public void setParent(Container container) {
+        super.setParent(container);
+        if (container instanceof ServletContext) {
+            this.setServletContext((ServletContext) container);
+        }
+    }
+
+    @Override
     public ServletContext getServletContext() {
         if (Objects.isNull(this.instance)) {
             this.loadServlet();
@@ -184,4 +203,35 @@ public class ServletInformation implements Servlet {
 
         return this.instance.getServletContext();
     }
+
+    @Override
+    public void init() {
+        this.instance.init();
+    }
+
+    @Override
+    public String getInfo() {
+        return "Minit Servlet Wrapper, version 0.1";
+    }
+
+    @Override
+    public void invoke(HttpMTRequest request, HttpMTResponse response) throws IOException, ServletException {
+        this.service(request, response);
+    }
+
+    @Override
+    public void addChild(Container container) {}
+
+    @Override
+    public Container findChild(String name) {
+        return null;
+    }
+
+    @Override
+    public Container[] findChildren() {
+        return new Container[0];
+    }
+
+    @Override
+    public void removeChild(Container child) {}
 }

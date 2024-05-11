@@ -79,6 +79,21 @@ public class Session implements MTSession {
         this.valid = false;
     }
 
+    @Override
+    public void access() {
+
+    }
+
+    @Override
+    public void expire() {
+
+    }
+
+    @Override
+    public void recycle() {
+
+    }
+
 
     private void checkValid() {
         AssertUtil.state(this.valid, "会话已经失效");

@@ -71,7 +71,7 @@ public class MimicTomcatServer {
 
     private void doStart() {
         Notifier notifier = new NotifierImpl(Objects.requireNonNull(scanner, "没有找到合适的组件扫描器").getWebListenerComponents());
-        servletContext = ServletContextFactory.getInstance(scanner.getWebListenerComponents(),notifier);
+        servletContext = ServletContextFactory.getInstance(scanner,notifier);
         servletContext.setAttribute("notifier",notifier);
 
         //初始化servlet一下，主要是preinit
@@ -102,7 +102,7 @@ public class MimicTomcatServer {
                             // 传递上下文,事件监听注册
                             pipeline.addLast(new MimicHttpInBoundHandler(servletContext));
                             // 模拟servlet处理请求和响应
-                            pipeline.addLast(new DefaultMimicTomcatChannelHandler(scanner,servletContext));
+                            pipeline.addLast(new DefaultMimicTomcatChannelHandler(servletContext));
 
                         }
                     });

@@ -1,5 +1,6 @@
 package com.attackonarchitect.context;
 
+import com.attackonarchitect.core.Context;
 import com.attackonarchitect.listener.EventListener;
 import com.attackonarchitect.listener.Notifier;
 
@@ -9,7 +10,7 @@ import java.util.List;
  * @description:
  */
 
-public interface ServletContext {
+public interface ServletContext extends Context {
 
     /**
      * 设置一个属性

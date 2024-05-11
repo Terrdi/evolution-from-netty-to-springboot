@@ -196,12 +196,20 @@ public class HttpMTRequest implements MTRequest{
     }
 
     public MTSession getSession() {
-        return this.getSession(false);
+        MTSession ret = this.getSession(false);
+        if (Objects.nonNull(ret)) {
+            ret.access();
+        }
+        return ret;
     }
 
     @Override
     public MTSession openSession() {
-        return this.getSession(true);
+        MTSession ret = this.getSession(true);
+        if (Objects.nonNull(ret)) {
+            ret.access();
+        }
+        return ret;
     }
 
     private String getSessionId() {

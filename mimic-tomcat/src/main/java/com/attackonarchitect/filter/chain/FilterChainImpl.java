@@ -1,10 +1,13 @@
 package com.attackonarchitect.filter.chain;
 
+import com.attackonarchitect.http.HttpMTRequest;
+import com.attackonarchitect.http.HttpMTResponse;
 import com.attackonarchitect.http.MTRequest;
 import com.attackonarchitect.http.MTResponse;
-import com.attackonarchitect.servlet.Servlet;
+import com.attackonarchitect.servlet.ServletException;
+import com.attackonarchitect.servlet.StandardWrapper;
 
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,14 +23,14 @@ public class FilterChainImpl implements FilterChain {
 
     private FilterNode currNode = null;
 
-    private Servlet targetServlet;
+    private StandardWrapper targetServlet;
 
-    private FilterChainImpl(Servlet targetServlet) {
+    private FilterChainImpl(StandardWrapper targetServlet) {
         this.targetServlet = targetServlet;
         tail = head;
     }
 
-    public static FilterChain createFilterChain(Servlet targetServlet,List<Filter> filters){
+    public static FilterChain createFilterChain(StandardWrapper targetServlet, List<Filter> filters){
         FilterChainImpl filterChain = new FilterChainImpl(targetServlet);
         filterChain.addLast(filters);
         return filterChain;
@@ -73,12 +76,12 @@ public class FilterChainImpl implements FilterChain {
 //                traveler=traveler.next;
 //            }
             if (Objects.isNull(currNode)) {
-                targetServlet.service(request,response);
+                targetServlet.invoke((HttpMTRequest) request, (HttpMTResponse) response);
             } else {
                 currNode.exec(request, response, this);
             }
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new ServletException(e);
         }
     }
 }

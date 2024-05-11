@@ -1,5 +1,6 @@
 package com.attackonarchitect.context;
 
+import com.attackonarchitect.ComponentScanner;
 import com.attackonarchitect.listener.Notifier;
 import com.attackonarchitect.listener.webcontext.ServletContextEvent;
 import com.attackonarchitect.listener.webcontext.ServletContextListener;
@@ -16,9 +17,9 @@ public class ServletContextFactory {
 
     private static ServletContext cache;
 
-    public static ServletContext getInstance(List<String> webListeners, Notifier notifier) {
+    public static ServletContext getInstance(ComponentScanner scanner, Notifier notifier) {
         if (cache == null) {
-            cache = ApplicationContext.getInstance(notifier);
+            cache = ApplicationContext.getInstance(scanner, notifier);
 //            ((ApplicationContext) cache).setNotifiler(notifier);
 //            ServletContextEvent sce = new ServletContextEvent();
 //            sce.setSource(cache);
