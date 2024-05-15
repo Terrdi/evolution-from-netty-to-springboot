@@ -1,5 +1,7 @@
 package com.attackonarchitect.context;
 
+import com.attackonarchitect.listener.Event;
+import com.attackonarchitect.listener.Notifier;
 import com.attackonarchitect.logger.Logger;
 
 import java.util.Map;
@@ -152,7 +154,7 @@ public abstract class ContainerBase implements Container {
             System.out.println(newMessage);
         }
     }
-    
+
     protected void log(String message, Throwable throwable) {
         Logger logger = getLogger();
         final String newMessage = logName() + ": " + message;
@@ -161,6 +163,21 @@ public abstract class ContainerBase implements Container {
         } else {
             System.out.println(newMessage);
             throwable.printStackTrace(System.out);
+        }
+    }
+
+    protected Notifier getNotifiler() {
+        if (this.parent instanceof ContainerBase) {
+            return ((ContainerBase) this.parent).getNotifiler();
+        } else {
+            return null;
+        }
+    }
+
+    public void notify(final Event event) {
+        Notifier notifier = this.getNotifiler();
+        if (Objects.nonNull(notifier)) {
+            notifier.notifyListeners(event);
         }
     }
 }

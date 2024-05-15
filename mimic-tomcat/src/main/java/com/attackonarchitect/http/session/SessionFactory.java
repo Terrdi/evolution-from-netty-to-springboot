@@ -1,5 +1,6 @@
 package com.attackonarchitect.http.session;
 
+import com.attackonarchitect.context.Container;
 import com.attackonarchitect.utils.RandomUtil;
 
 import java.util.HashMap;
@@ -43,12 +44,12 @@ public abstract class SessionFactory {
      * 创建一个session并放入session容器
      * @return
      */
-    public static MTSession createSession() {
+    public static MTSession createSession(final Container parent) {
         String id;
         do {
             id = generateId();
         } while (sessions.containsKey(id));
-        MTSession session = new Session(id);
+        MTSession session = new Session(parent, id);
         sessions.put(id, session);
         return session;
     }
@@ -58,13 +59,13 @@ public abstract class SessionFactory {
      * @param sessionId 会话编号
      * @return
      */
-    public static MTSession getSession(final String sessionId) {
+    public static MTSession getSession(final Container parent, final String sessionId) {
         MTSession session = sessions.get(sessionId);
         if (Objects.isNull(session)) {
             synchronized (sessions) {
                 System.out.println("会话【" + sessionId + "】已失效, 重新创建...");
-                sessions.putIfAbsent(sessionId, new Session(sessionId));
-                session = getSession(sessionId);
+                sessions.putIfAbsent(sessionId, new Session(parent, sessionId));
+                session = getSession(parent, sessionId);
             }
         }
         return session;

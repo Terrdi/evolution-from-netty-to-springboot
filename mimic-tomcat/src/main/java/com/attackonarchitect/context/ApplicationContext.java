@@ -8,16 +8,17 @@ import com.attackonarchitect.handler.RouteMaxMatchStrategy;
 import com.attackonarchitect.handler.RouteStrategy;
 import com.attackonarchitect.http.HttpMTRequest;
 import com.attackonarchitect.http.HttpMTResponse;
-import com.attackonarchitect.listener.*;
+import com.attackonarchitect.listener.Notifier;
 import com.attackonarchitect.listener.webcontext.ServletContextAttributeEvent;
-import com.attackonarchitect.listener.webcontext.ServletContextAttributeListener;
 import com.attackonarchitect.listener.webcontext.ServletContextEvent;
-import com.attackonarchitect.listener.webcontext.ServletContextListener;
 import com.attackonarchitect.logger.Logger;
 import com.attackonarchitect.servlet.*;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -44,7 +45,7 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
             //触发通知，但是放在这里通知其实不合理
             //因为万一有其他的 ServletContext 实现
             //所以还是放在工厂里面更好感觉。
-            notifier.notifyListeners(ServletContextListener.class,sce);
+            notifier.notifyListeners(sce);
             instance.log("Container created.");
         }
         return instance;
@@ -59,7 +60,7 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
         event.setName(name);
         event.setValue(obj);
 
-        getNotifiler().notifyListeners(ServletContextAttributeListener.class,event);
+        getNotifiler().notifyListeners(event);
     }
 
     @Override

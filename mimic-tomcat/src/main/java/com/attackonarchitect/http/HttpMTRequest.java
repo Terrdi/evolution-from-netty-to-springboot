@@ -100,7 +100,7 @@ public class HttpMTRequest implements MTRequest{
     public void setAttribute(String name, Object obj){
         attributeDepot.put(name,obj);
         ServletRequestAttributeEvent srae = new ServletRequestAttributeEvent(name, obj);
-        context.getNotifiler().notifyListeners(ServletRequestAttributeListener.class,srae);
+        context.getNotifiler().notifyListeners(srae);
     }
 
     //////////////////// parameters
@@ -184,11 +184,11 @@ public class HttpMTRequest implements MTRequest{
             String id = this.getSessionId();
             boolean noId = StringUtil.isBlank(id);
             if (noId && create) {
-                session = new SessionFacade(SessionFactory.createSession());
+                session = new SessionFacade(SessionFactory.createSession(context));
                 id = session.getId();
                 this.setAttribute(SessionFactory.SESSION_NAME, id);
             } else if (!noId) {
-                session = new SessionFacade(SessionFactory.getSession(id));
+                session = new SessionFacade(SessionFactory.getSession(context, id));
             }
         }
 
