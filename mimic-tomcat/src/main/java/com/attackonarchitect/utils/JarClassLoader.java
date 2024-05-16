@@ -22,9 +22,16 @@ public class JarClassLoader extends URLClassLoader {
 
     public JarClassLoader(File file) throws MalformedURLException {
         this(new URL[]{file.toURI().toURL()});
+        this.jarName = FileUtil.getSimpleFileName(file.getName());
     }
 
     public JarClassLoader(String resource) throws MalformedURLException {
         this(new URL[]{new URL(resource)});
+    }
+
+    private String jarName;
+
+    public String getJarName() {
+        return jarName;
     }
 }

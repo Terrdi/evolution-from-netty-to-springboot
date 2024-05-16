@@ -19,6 +19,6 @@ import com.attackonarchitect.servlet.WebInitParam;
 )
 public class Boot {
     public static void main(String[] args) {
-        new MimicTomcatServer(9999).start(Boot.class);
+        new MimicTomcatServer(9999).addConfig(Boot.class);
     }
 }

@@ -5,6 +5,7 @@ import com.attackonarchitect.listener.WebListener;
 import com.attackonarchitect.servlet.ServletInformation;
 import com.attackonarchitect.servlet.ServletInformationBuilder;
 import com.attackonarchitect.servlet.WebServlet;
+import com.attackonarchitect.utils.StringUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +21,7 @@ public class WebComponentScanner implements ComponentScanner {
 
     private Class<?> clazz;
 
+    private String applicationName = "";
 
     public WebComponentScanner(Class<?> clazz) {
         this.clazz = clazz;
@@ -32,6 +34,11 @@ public class WebComponentScanner implements ComponentScanner {
                 String clazzName = clazz.getName();
                 String packagePath = clazzName.substring(0, clazzName.lastIndexOf("."));
                 scanPackages[0] = packagePath;
+            }
+
+            this.applicationName = annotation.applicationName();
+            if (StringUtil.isBlank(this.applicationName)) {
+                this.applicationName = clazz.getSimpleName();
             }
         }
 
@@ -168,5 +175,10 @@ public class WebComponentScanner implements ComponentScanner {
     @Override
     public Map<String, Integer> getWebFilterComponentsOrder() {
         return this.webFilterComponentsOrder;
+    }
+
+    @Override
+    public String getApplicationName() {
+        return this.applicationName;
     }
 }

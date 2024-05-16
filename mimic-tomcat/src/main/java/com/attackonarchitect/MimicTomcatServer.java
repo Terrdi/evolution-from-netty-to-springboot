@@ -1,5 +1,7 @@
 package com.attackonarchitect;
 
+import com.attackonarchitect.core.StandardHost;
+import com.attackonarchitect.core.WebappClassLoader;
 import com.attackonarchitect.logger.FileLogger;
 import com.attackonarchitect.servlet.ServletManagerFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -19,7 +21,8 @@ import com.attackonarchitect.handler.MimicHttpInBoundHandler;
 import com.attackonarchitect.listener.Notifier;
 import com.attackonarchitect.listener.NotifierImpl;
 
-import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -36,16 +39,26 @@ public class MimicTomcatServer {
     /**
      * 组件扫描器servlet,filter,listener
      */
-    private ComponentScanner scanner;
+    private final List<WebappClassLoader> webappClassLoaderList = new ArrayList<>();
     /**
      * servletContext
      * 1.配置信息
      * 2.全局数据共享
      */
-    private ServletContext servletContext;
-    public void start(Class<?> clazz){
-        scanner = new WebComponentScanner(clazz);
-        this.doStart();
+//    private ServletContext servletContext;
+
+    private StandardHost host = new StandardHost();
+
+    public void addConfig(Class<?> clazz, final String path){
+//        this.scanners.add(new WebComponentScanner(clazz));
+        WebappClassLoader classLoader = new WebappClassLoader();
+        classLoader.setPath(path);
+        classLoader.setComponentScanner(new WebComponentScanner(clazz));
+        this.webappClassLoaderList.add(classLoader);
+    }
+
+    public void addConfig(Class<?> clazz){
+        this.addConfig(clazz, "/");
     }
 
     /**
@@ -53,30 +66,43 @@ public class MimicTomcatServer {
      *
      * @param configFile 配置文件路径
      */
-    public void start(String configFile) {
+    public void addConfig(String configFile, final String path) {
+        WebappClassLoader classLoader = new WebappClassLoader();
+        classLoader.setPath(path);
         if (configFile.endsWith(".xml")) {
-            scanner = new XmlComponentScanner(configFile);
+            classLoader.setComponentScanner(new XmlComponentScanner(configFile));
         } else if (configFile.endsWith(".jar") || configFile.endsWith(".war")) {
-            scanner = new XmlComponentScanner(configFile);
+            classLoader.setComponentScanner(new XmlComponentScanner(configFile));
         } else {
             throw new UnsupportedOperationException("不支持的文件格式:  " + configFile);
         }
-        this.doStart();
+        this.webappClassLoaderList.add(classLoader);
     }
 
-    public void start(ClassLoader classLoader) {
-        scanner = new SpiComponentScanner(classLoader);
-
-        this.doStart();
+    public void addConfig(String configFile){
+        this.addConfig(configFile, "/");
     }
 
-    private void doStart() {
-        Notifier notifier = new NotifierImpl(Objects.requireNonNull(scanner, "没有找到合适的组件扫描器").getWebListenerComponents());
-        servletContext = ServletContextFactory.getInstance(scanner,notifier, new FileLogger());
-        servletContext.setAttribute("notifier",notifier);
+    public void addConfig(ClassLoader classLoader0, final String path) {
+        WebappClassLoader classLoader = new WebappClassLoader();
+        classLoader.setPath(path);
+        classLoader.setComponentScanner(new SpiComponentScanner(classLoader0));
+        this.webappClassLoaderList.add(classLoader);
+    }
+
+    public void addConfig(ClassLoader classLoader){
+        this.addConfig(classLoader, "/");
+    }
+
+    public void start() {
+        host.start(this.webappClassLoaderList);
+
+//        Notifier notifier = new NotifierImpl(Objects.requireNonNull(scanner, "没有找到合适的组件扫描器").getWebListenerComponents());
+//        servletContext = ServletContextFactory.getInstance(scanner, notifier, new FileLogger());
+//        servletContext.setAttribute("notifier",notifier);
 
         //初始化servlet一下，主要是preinit
-        ServletManagerFactory.getInstance(scanner,servletContext);
+//        ServletManagerFactory.getInstance(scanner,servletContext);
 
         runNetty();
     }
@@ -101,10 +127,9 @@ public class MimicTomcatServer {
                             // 处理 http 长度较长导致的解析问题
                             pipeline.addLast(new HttpObjectAggregator(65536));
                             // 传递上下文,事件监听注册
-                            pipeline.addLast(new MimicHttpInBoundHandler(servletContext));
+                            pipeline.addLast(new MimicHttpInBoundHandler(host));
                             // 模拟servlet处理请求和响应
-                            pipeline.addLast(new DefaultMimicTomcatChannelHandler(servletContext));
-
+                            pipeline.addLast(new DefaultMimicTomcatChannelHandler(host));
                         }
                     });
 

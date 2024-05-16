@@ -16,11 +16,11 @@ public class ServletContextFactory {
     private ServletContextFactory() {
     }
 
-    private static ServletContext cache;
+//    private static ServletContext cache;
 
     public static ServletContext getInstance(ComponentScanner scanner, Notifier notifier, Logger logger) {
-        if (cache == null) {
-            cache = ApplicationContext.getInstance(scanner, notifier, logger);
+//        if (cache == null) {
+//            cache = ApplicationContext.getInstance(scanner, notifier, logger);
 //            ((ApplicationContext) cache).setNotifiler(notifier);
 //            ServletContextEvent sce = new ServletContextEvent();
 //            sce.setSource(cache);
@@ -31,9 +31,10 @@ public class ServletContextFactory {
 //                    notifyServletContextListener(webListeners, sce);
 //                }
 //            }).start();
-        }
+//        }
 
-        return cache;
+//        return cache;
+        return ApplicationContext.getInstance(scanner, notifier, logger);
     }
 }
 

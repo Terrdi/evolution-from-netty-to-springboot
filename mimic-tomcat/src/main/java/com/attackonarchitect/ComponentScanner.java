@@ -48,4 +48,9 @@ public interface ComponentScanner {
      */
     Map<String,Integer> getWebFilterComponentsOrder();
 
+    /**
+     * 获取应用名称
+     * @return
+     */
+    String getApplicationName();
 }

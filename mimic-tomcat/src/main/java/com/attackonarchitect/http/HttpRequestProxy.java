@@ -7,6 +7,7 @@ import net.sf.cglib.proxy.MethodProxy;
 import com.attackonarchitect.context.ServletContext;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 /**
  * @description:
@@ -20,6 +21,10 @@ public class HttpRequestProxy {
     HttpRequestProxy(HttpRequest httpRequest, ServletContext servletContext) {
         this.httpRequest = httpRequest;
         this.servletContext = servletContext;
+    }
+
+    HttpRequestProxy(HttpRequest httpRequest) {
+        this.httpRequest = httpRequest;
     }
 
     public HttpMTRequest createRequest() {
@@ -44,7 +49,10 @@ public class HttpRequestProxy {
             }
         });
 
-        //调用有参构造函数
-        return (HttpMTRequest) enhancer.create(new Class[]{ServletContext.class},new Object[]{servletContext});
+        return Objects.isNull(this.servletContext) ?
+                // 调用无参构造函数
+                (HttpMTRequest) enhancer.create()
+                : //调用有参构造函数
+                (HttpMTRequest) enhancer.create(new Class[]{ServletContext.class},new Object[]{servletContext});
     }
 }

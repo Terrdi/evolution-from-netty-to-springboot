@@ -3,6 +3,7 @@ package com.attackonarchitect;
 import com.attackonarchitect.servlet.ServletInformation;
 import com.attackonarchitect.utils.FileUtil;
 import com.attackonarchitect.utils.JarClassLoader;
+import com.attackonarchitect.utils.StringUtil;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -36,6 +37,10 @@ public class XmlComponentScanner implements ComponentScanner {
 
     private final ClassLoader classLoader;
 
+    private String applicationName;
+
+    private String displayName;
+
     public XmlComponentScanner(String resource) {
         this.resource = resource;
 
@@ -44,11 +49,13 @@ public class XmlComponentScanner implements ComponentScanner {
                 || extension.equalsIgnoreCase("war")) {
             try {
                 this.classLoader = new JarClassLoader(new File(this.resource));
+                this.applicationName = ((JarClassLoader) this.classLoader).getJarName();
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }
         } else {
-            this.classLoader = Thread.currentThread().getContextClassLoader();;
+            this.classLoader = Thread.currentThread().getContextClassLoader();
+            this.applicationName = "";
         }
 
         this.init();
@@ -83,6 +90,7 @@ public class XmlComponentScanner implements ComponentScanner {
             switch (nodeName) {
                 case "display-name":
                     System.out.println("当前显示名称为: " + currElement.getText());
+                    this.displayName = currElement.getTextTrim();
                     break;
                 case "description":
                     System.out.println("当前应用描述为： " + currElement.getText());
@@ -266,5 +274,11 @@ public class XmlComponentScanner implements ComponentScanner {
     @Override
     public Map<String, Integer> getWebFilterComponentsOrder() {
         return null;
+    }
+
+    @Override
+    public String getApplicationName() {
+        return StringUtil.isBlank(this.applicationName) ? this.displayName :
+                this.applicationName;
     }
 }

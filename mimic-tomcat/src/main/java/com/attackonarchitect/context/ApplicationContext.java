@@ -15,10 +15,7 @@ import com.attackonarchitect.logger.Logger;
 import com.attackonarchitect.servlet.*;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,23 +29,40 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
         this.provider = provider;
     }
 
-    private static ApplicationContext instance;
+//    private static ApplicationContext instance;
 
     public static ServletContext getInstance(ComponentScanner scanner, Notifier notifier, Logger logger) {
-        if(instance == null){
+        ApplicationContext instance;
+//        if(instance == null){
             instance = new ApplicationContext(scanner);
             instance.setNotifiler(notifier);
+            instance.setAttribute("notifier",notifier);
             instance.setLogger(logger);
+            instance.setName(scanner.getApplicationName());
             ServletContextEvent sce = new ServletContextEvent();
             sce.setSource(instance);
-            sce.setName("servletcontext");
+            sce.setName(scanner.getApplicationName());
             //触发通知，但是放在这里通知其实不合理
             //因为万一有其他的 ServletContext 实现
             //所以还是放在工厂里面更好感觉。
             notifier.notifyListeners(sce);
-            instance.log("Container created.");
-        }
+            instance.log("ServletContext created.");
+            instance.init();
+//        }
         return instance;
+    }
+
+    private void init() {
+        this.servletMap.put("default", new StandardWrapper(new ServletInformation(new DefaultMimicServlet()), this));
+        this.servletMap.put("error", new StandardWrapper(new ServletInformation(new ErrorMimicServlet()), this));
+
+        //新增 loadOnStartup 初始化功能
+        Collection<ServletInformation> values = provider.getServletInformationMap().values();
+
+        // 依据loadOnStartup顺序进行初始化
+        values.stream().filter(info -> info.getLoadOnStartup() > 0)
+                .sorted(Comparator.comparingInt(ServletInformation::getLoadOnStartup))
+                .forEachOrdered(ServletInformation::loadServlet);
     }
 
     private Map<String, Object> attributeDepot;
@@ -102,22 +116,22 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
 
     @Override
     public String getDocBase() {
-        return "";
+        return this.docBase;
     }
 
     @Override
     public void setDocBase(String docBase) {
-
+        this.docBase = docBase;
     }
 
     @Override
     public String getPath() {
-        return "";
+        return this.path;
     }
 
     @Override
     public void setPath(String path) {
-
+        this.path = path;
     }
 
     @Override
@@ -165,6 +179,10 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
 
     }
 
+    private String docBase;
+
+    private String path;
+
     @Override
     public String getInfo() {
         return "Mimic Servlet Context, version 0.1";
@@ -187,6 +205,13 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
     @Override
     public void invoke(HttpMTRequest request, HttpMTResponse response) throws IOException, ServletException {
         String uri = request.uri();
+        final String path = this.getPath();
+        if (uri.startsWith(path)) {
+            uri = uri.substring(path.length());
+        }
+        if (!uri.startsWith("/")) {
+            uri = "/" + uri;
+        }
 
 //        HttpMTResponse response = new HttpMTResponse(ctx);
         // filter责任链
@@ -200,7 +225,7 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
         StandardWrapper servletWrapper = servletMap.get(uri);
         if (Objects.isNull(servletWrapper)) {
             // 路由策略 -- 最大匹配
-            RouteStrategy strategy = new RouteMaxMatchStrategy(ServletManagerFactory.getInstance(provider, this));
+            RouteStrategy strategy = new RouteMaxMatchStrategy(this);
             ServletInformation servlet = strategy.route(uri);
             servletWrapper = new StandardWrapper(servlet, this);
             servletMap.put(uri, servletWrapper);

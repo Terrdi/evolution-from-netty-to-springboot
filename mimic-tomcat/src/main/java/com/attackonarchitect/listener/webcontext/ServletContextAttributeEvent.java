@@ -5,7 +5,7 @@ import com.attackonarchitect.listener.Event;
 /**
  * @description:
  */
-public class ServletContextAttributeEvent implements Event {
+public final class ServletContextAttributeEvent implements Event {
 
     private String name;
     private Object value;

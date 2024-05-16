@@ -13,4 +13,8 @@ public class HttpRequestProxyFactory {
     public static HttpRequestProxy createProxy(HttpRequest request, ServletContext servletContext){
         return new HttpRequestProxy(request,servletContext);
     }
+
+    public static HttpRequestProxy createProxy(HttpRequest request){
+        return new HttpRequestProxy(request);
+    }
 }

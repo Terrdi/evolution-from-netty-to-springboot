@@ -229,7 +229,12 @@ public class HttpMTRequest implements MTRequest{
         this.context = context;
     }
 
+    public HttpMTRequest() {}
 
+
+    public void setServletContext(ServletContext servletContext) {
+        this.context = servletContext;
+    }
 
     @Override
     public ServletContext getServletContext() {

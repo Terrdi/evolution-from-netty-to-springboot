@@ -9,6 +9,7 @@ import com.attackonarchitect.servlet.Servlet;
 import com.attackonarchitect.servlet.ServletInformation;
 import com.attackonarchitect.servlet.ServletInformationBuilder;
 import com.attackonarchitect.servlet.WebServlet;
+import com.attackonarchitect.utils.JarClassLoader;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,9 +32,16 @@ public class SpiComponentScanner implements ComponentScanner {
 
     private final ClassLoader classLoader;
 
+    private String applicationName;
+
     public SpiComponentScanner(ClassLoader classLoader) {
         this.classLoader = Optional.ofNullable(classLoader).orElseGet(Thread.currentThread()::getContextClassLoader);
         this.init();
+        if (classLoader instanceof JarClassLoader) {
+            this.applicationName = ((JarClassLoader) classLoader).getJarName();
+        } else {
+            this.applicationName = "default-application";
+        }
     }
 
     private void init() {
@@ -122,5 +130,10 @@ public class SpiComponentScanner implements ComponentScanner {
     @Override
     public Map<String, Integer> getWebFilterComponentsOrder() {
         return null;
+    }
+
+    @Override
+    public String getApplicationName() {
+        return this.applicationName;
     }
 }

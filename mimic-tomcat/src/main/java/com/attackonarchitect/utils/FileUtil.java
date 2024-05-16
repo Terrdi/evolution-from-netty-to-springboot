@@ -4,10 +4,7 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.util.AsciiString;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * 文件工具类
@@ -99,5 +96,28 @@ public interface FileUtil {
 
         return Optional.ofNullable(BINARY_FILE_TYPE.get(extension)).orElseGet(() -> TEXT_FILE_TYPE.get(extension))
                 .toString();
+    }
+
+    /**
+     * 解析出文件的简要名称
+     *
+     * @param fileName
+     * @return
+     */
+    static String getSimpleFileName(final String fileName) {
+        int index = Objects.isNull(fileName) ? -1 : fileName.lastIndexOf('.');
+        if (index > 0) {
+            int sIndex = fileName.lastIndexOf('/');
+            if (sIndex < 0) {
+                sIndex = fileName.lastIndexOf('\\');
+            }
+            if (sIndex < 0) {
+                sIndex = fileName.lastIndexOf(File.separatorChar);
+            }
+
+            return fileName.substring(sIndex + 1, index);
+        } else {
+            return fileName;
+        }
     }
 }

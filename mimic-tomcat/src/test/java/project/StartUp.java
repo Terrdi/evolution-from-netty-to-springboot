@@ -10,16 +10,19 @@ import com.attackonarchitect.WebScanPackage;
 @WebScanPackage
 public class StartUp {
     public static void main(String[] args) {
+        MimicTomcatServer server = new MimicTomcatServer(9999);
         // 注解启动
-        new MimicTomcatServer(9999).start(StartUp.class);
+        server.addConfig(StartUp.class, "/");
 
         // xml启动
-//        new MimicTomcatServer(9999).start("/WEB-INF/web.xml");
+        server.addConfig("/WEB-INF/web.xml", "/xml");
 
         // jar启动
 //        new MimicTomcatServer(9999).start("target/mimic-tomcat-1.0-SNAPSHOT.jar");
 
         // SPI 启动
 //        new MimicTomcatServer(9999).start(StartUp.class.getClassLoader());
+
+        server.start();
     }
 }

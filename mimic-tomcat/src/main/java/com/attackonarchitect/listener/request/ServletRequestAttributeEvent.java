@@ -6,7 +6,7 @@ import com.attackonarchitect.listener.EventListener;
 /**
  * @description:
  */
-public class ServletRequestAttributeEvent implements Event {
+public final class ServletRequestAttributeEvent implements Event {
     private String name;
     private Object value;
 
