@@ -94,4 +94,13 @@ public interface StringUtil {
 
         return ch;
     }
+
+    static String resolveUri(String uri) {
+        int index = uri.indexOf('?');
+        if (!uri.startsWith("/")) {
+            uri = "/" + uri;
+            index++;
+        }
+        return index > 0 ? uri.substring(0, index) : uri;
+    }
 }

@@ -4,15 +4,20 @@ import com.attackonarchitect.ComponentScanner;
 import com.attackonarchitect.core.Wrapper;
 import com.attackonarchitect.filter.chain.Chain;
 import com.attackonarchitect.filter.chain.FilterChainImplFactory;
+import com.attackonarchitect.handler.MaxMatchStrategy;
 import com.attackonarchitect.handler.RouteMaxMatchStrategy;
 import com.attackonarchitect.handler.RouteStrategy;
 import com.attackonarchitect.http.HttpMTRequest;
 import com.attackonarchitect.http.HttpMTResponse;
+import com.attackonarchitect.listener.Event;
+import com.attackonarchitect.listener.EventListener;
 import com.attackonarchitect.listener.Notifier;
 import com.attackonarchitect.listener.webcontext.ServletContextAttributeEvent;
 import com.attackonarchitect.listener.webcontext.ServletContextEvent;
 import com.attackonarchitect.logger.Logger;
+import com.attackonarchitect.matcher.MatcherSet;
 import com.attackonarchitect.servlet.*;
+import com.attackonarchitect.utils.StringUtil;
 
 import java.io.IOException;
 import java.util.*;
@@ -31,6 +36,8 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
 
 //    private static ApplicationContext instance;
 
+    private final MatcherSet servletMatcher = new MatcherSet();
+
     public static ServletContext getInstance(ComponentScanner scanner, Notifier notifier, Logger logger) {
         ApplicationContext instance;
 //        if(instance == null){
@@ -45,7 +52,9 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
             //触发通知，但是放在这里通知其实不合理
             //因为万一有其他的 ServletContext 实现
             //所以还是放在工厂里面更好感觉。
-            notifier.notifyListeners(sce);
+            if (Objects.nonNull(notifier)) {
+                notifier.notifyListeners(sce);
+            }
             instance.log("ServletContext created.");
             instance.init();
 //        }
@@ -53,16 +62,24 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
     }
 
     private void init() {
-        this.servletMap.put("default", new StandardWrapper(new ServletInformation(new DefaultMimicServlet()), this));
-        this.servletMap.put("error", new StandardWrapper(new ServletInformation(new ErrorMimicServlet()), this));
+//        this.servletMap.put("default", new StandardWrapper(new ServletInformation(new DefaultMimicServlet()), this));
+//        this.servletMap.put("error", new StandardWrapper(new ServletInformation(new ErrorMimicServlet()), this));
 
         //新增 loadOnStartup 初始化功能
         Collection<ServletInformation> values = provider.getServletInformationMap().values();
 
         // 依据loadOnStartup顺序进行初始化
-        values.stream().filter(info -> info.getLoadOnStartup() > 0)
+        values.stream()
+                .peek(servletInformation -> {
+                    for (String urlPattern : servletInformation.getUrlPattern()) {
+                        this.servletMatcher.addCharSequence(urlPattern, servletInformation);
+                    }
+                })
+                .filter(info -> info.getLoadOnStartup() > 0)
                 .sorted(Comparator.comparingInt(ServletInformation::getLoadOnStartup))
                 .forEachOrdered(ServletInformation::loadServlet);
+
+        this.servletMatcher.addCharSequence("/*", new ServletInformation(new DefaultMimicServlet()));
     }
 
     private Map<String, Object> attributeDepot;
@@ -100,7 +117,22 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
 
     @Override
     public Notifier getNotifiler() {
-        return this.notifier;
+        return Optional.ofNullable(this.notifier).orElseGet(() -> new Notifier() {
+            @Override
+            public void notifyListeners(Event event) {
+
+            }
+
+            @Override
+            public void addListener(EventListener eventListener) {
+
+            }
+
+            @Override
+            public void removeListener(EventListener eventListener) {
+
+            }
+        });
     }
 
 
@@ -209,9 +241,7 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
         if (uri.startsWith(path)) {
             uri = uri.substring(path.length());
         }
-        if (!uri.startsWith("/")) {
-            uri = "/" + uri;
-        }
+        uri = StringUtil.resolveUri(uri);
 
 //        HttpMTResponse response = new HttpMTResponse(ctx);
         // filter责任链
@@ -225,7 +255,8 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
         StandardWrapper servletWrapper = servletMap.get(uri);
         if (Objects.isNull(servletWrapper)) {
             // 路由策略 -- 最大匹配
-            RouteStrategy strategy = new RouteMaxMatchStrategy(this);
+            RouteStrategy strategy = new MaxMatchStrategy(this.servletMatcher);
+//            RouteStrategy strategy = new RouteMaxMatchStrategy(this);
             ServletInformation servlet = strategy.route(uri);
             servletWrapper = new StandardWrapper(servlet, this);
             servletMap.put(uri, servletWrapper);
@@ -256,5 +287,9 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
     @Override
     public Set<String> getAllRequestUri() {
         return this.provider.getServletInformationMap().keySet();
+    }
+
+    public MatcherSet getServletMatcher() {
+        return this.servletMatcher;
     }
 }

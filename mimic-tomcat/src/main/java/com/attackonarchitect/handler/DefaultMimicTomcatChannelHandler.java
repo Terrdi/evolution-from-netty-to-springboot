@@ -6,6 +6,7 @@ import com.attackonarchitect.http.HttpMTRequest;
 import com.attackonarchitect.http.HttpMTResponse;
 import com.attackonarchitect.listener.Notifier;
 import com.attackonarchitect.listener.request.ServletRequestEvent;
+import com.attackonarchitect.utils.StringUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -23,7 +24,7 @@ public class DefaultMimicTomcatChannelHandler extends ChannelInboundHandlerAdapt
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         HttpMTRequest request = (HttpMTRequest) msg;
-        ServletContext context = (ServletContext) this.container.findChild(resolveUri(request.uri()));
+        ServletContext context = (ServletContext) this.container.findChild(StringUtil.resolveUri(request.uri()));
         request.setServletContext(context);
 
         HttpMTResponse response = new HttpMTResponse(ctx);
@@ -37,12 +38,6 @@ public class DefaultMimicTomcatChannelHandler extends ChannelInboundHandlerAdapt
         this.container.invoke(request, response);
 
         ctx.flush();
-    }
-
-
-    private String resolveUri(final String uri) {
-        int index = uri.indexOf('?');
-        return index > 0 ? uri.substring(0, index) : uri;
     }
 
     @Override

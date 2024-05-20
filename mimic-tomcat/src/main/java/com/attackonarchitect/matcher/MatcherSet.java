@@ -33,4 +33,12 @@ public class MatcherSet {
     public Object maxStrictMatchValue(final CharSequence text, final Character next) {
         return this.head.maxStrictMatchValue(text, next);
     }
+
+    public Object indistinctMatchValue(final CharSequence text) {
+        return this.head.indistinctMatchValue(text);
+    }
+
+    public Object indistinctMatchValue(final CharSequence text, char indistinct, char separator) {
+        return this.head.indistinctMatchValue(text, indistinct, separator);
+    }
 }

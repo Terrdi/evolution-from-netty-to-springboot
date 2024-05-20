@@ -1,7 +1,5 @@
 package com.attackonarchitect.handler;
 
-import com.attackonarchitect.context.ServletContext;
-import com.attackonarchitect.servlet.Servlet;
 import com.attackonarchitect.servlet.ServletInformation;
 import com.attackonarchitect.servlet.ServletManager;
 

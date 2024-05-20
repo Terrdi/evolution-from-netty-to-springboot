@@ -1,10 +1,9 @@
 package com.attackonarchitect.matcher;
 
 import com.attackonarchitect.utils.AssertUtil;
+import com.attackonarchitect.utils.Tuple;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * 匹配的结点
@@ -147,6 +146,7 @@ class MatchNode {
             char c = text.charAt(i);
             p = p.findNext(lastC);
             if (Objects.nonNull(p)) {
+                // 找到该前缀
                 if ((c == next || p.contains(END_EOF) && lastC == next) && p.value != Character.valueOf(END_EOF)) {
                     ret = p.value;
                 }
@@ -156,12 +156,115 @@ class MatchNode {
         }
 
         if (i == text.length()) {
-            // 查找到最后, 可以不做下一个结点判断
+            // 看是否最后一个字符也成功匹配
+            // 如果是, 则完全匹配上
             p = p.findNext(text.charAt(i - 1));
             if (Objects.nonNull(p) && p.value != Character.valueOf(END_EOF)) {
                 ret = p.value;
             }
         }
         return ret;
+    }
+
+    /**
+     * 模糊匹配
+     * @param text 进行匹配的字符串
+     * @return
+     */
+    public Object indistinctMatchValue(final CharSequence text) {
+        return this.indistinctMatchValue(text, '*', '/');
+    }
+
+    /**
+     * 模糊匹配
+     * @param text       进行匹配的字符串
+     * @param indistinct 表示模糊的字符
+     * @param separator  分割字符
+     * @return
+     */
+    public Object indistinctMatchValue(final CharSequence text, char indistinct, char separator) {
+        return indistinctMatchValue(text, 0, this, indistinct, separator);
+    }
+
+    private static Object indistinctMatchValue(final CharSequence text, int startIndex, MatchNode p, char indistinct,
+                                               char separator) {
+        if (Objects.isNull(p)) {
+            return null;
+        }
+        if (startIndex < 0) {
+            return p.value;
+        }
+//        final Stack<Map.Entry<Integer, MatchNode>> stack = new Stack<>();
+        final List<Tuple<MatchNode, Integer>> list = new ArrayList<>();
+        for (int i = startIndex; i < text.length() && Objects.nonNull(p); i++) {
+            char ch = text.charAt(i);
+            MatchNode newP = null;
+            if (p.contains(ch)) {
+                // 存在待匹配字符, 优先匹配
+                // 如果匹配失败, 则回溯到上一个模糊字符结点
+                newP = p.findNext(ch);
+            }
+            if (p.contains(indistinct)) {
+                // 当前结点的下一个结点可能是模糊字符
+                MatchNode inP = p.findNext(indistinct);
+                list.add(Tuple.create(inP, i));
+            }
+            p = newP;
+        }
+
+        if (Objects.isNull(p) || p.value == Character.valueOf(END_EOF)) {
+            // 没有匹配成功, 进行模糊匹配查找
+            return searchPossibleTextIndex(list, text, indistinct, separator);
+        } else {
+            return p.value;
+        }
+    }
+
+
+    private static Object searchPossibleTextIndex(final List<Tuple<MatchNode, Integer>> list, final CharSequence text,
+                                                  char indistinct, char separator) {
+        // 广度优先搜索
+        for (int j = 0; j < list.size(); j++) {
+            Tuple<MatchNode, Integer> tuple = list.get(j);
+            MatchNode p = tuple.getLeft();
+            int startIndex = tuple.getRight();
+            if (Objects.isNull(p)) {
+                continue;
+            }
+            if (p.currValue == indistinct && startIndex >= 0) {
+                // 当前是模糊匹配
+                MatchNode nextP = p.findNext(indistinct);
+                for (int i = startIndex + 1; i < text.length(); i++) {
+                    char ch = text.charAt(i);
+                    if (Objects.nonNull(p)) {
+                        list.add(Tuple.create(p.findNext(ch), i + 1));
+                    }
+                    if (ch == separator) {
+                        // 单个模糊字符, 不能模糊匹配分割字符
+                        p = null;
+                    }
+                    if (Objects.nonNull(nextP)) {
+                        // 连续两个模糊字符, 代表可以同时模糊匹配分割字符
+                        list.add(Tuple.create(nextP.findNext(ch), i + 1));
+                    } else if (Objects.isNull(p)) {
+                        break;
+                    }
+                }
+                // 后缀全是模糊字符
+                if (Objects.nonNull(p) && p.contains(END_EOF)) {
+                    list.add(Tuple.create(p, -1));
+                }
+                if (Objects.nonNull(nextP) && nextP.contains(END_EOF)) {
+                    list.add(Tuple.create(nextP, -1));
+                }
+            } else {
+                Object ret = indistinctMatchValue(text, startIndex, p, indistinct, separator);
+                if (Objects.nonNull(ret)) {
+                    return ret;
+                }
+            }
+        }
+
+        return null;
     }
 }
