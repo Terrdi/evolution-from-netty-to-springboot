@@ -38,8 +38,15 @@ public class HttpMTFileResponse extends HttpMTResponse {
 
     private String uri = "";
 
+    private String docbase = null;
+
     public HttpMTFileResponse buildUri(final String uri) {
         this.uri = uri;
+        return this;
+    }
+
+    public HttpMTFileResponse buildDocBase(final String docbase) {
+        this.docbase = docbase;
         return this;
     }
 

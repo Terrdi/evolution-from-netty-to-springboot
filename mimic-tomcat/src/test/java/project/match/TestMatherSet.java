@@ -63,11 +63,15 @@ public class TestMatherSet {
         set.addCharSequence("/*/second", 2);
         set.addCharSequence("/**/third", 3);
         set.addCharSequence("/first/**", 4);
+        set.addCharSequence("/*", 0);
+        set.addCharSequence("/hello/*", 6);
 
         Assert.assertEquals(1, set.indistinctMatchValue("/first"));
-        Assert.assertEquals(2, set.indistinctMatchValue("/first/second"));
+        Assert.assertEquals(2, set.indistinctMatchValue("/first1/second"));
         Assert.assertEquals(3, set.indistinctMatchValue("/text/first/second/third"));
         Assert.assertEquals(4, set.indistinctMatchValue("/first/second/third/fourth"));
+        Assert.assertEquals(6, set.indistinctMatchValue("/hello/a", '*', '\0'));
+        Assert.assertEquals(6, set.indistinctMatchValue("/hello/a/b", '*', '\0'));
         Assert.assertNull(set.indistinctMatchValue("/text/first/second"));
     }
 
@@ -75,6 +79,7 @@ public class TestMatherSet {
     public void testPerformance() {
         ApplicationContext context = (ApplicationContext) ApplicationContext.getInstance(new XmlComponentScanner("/WEB-INF/web.xml"),
                 null, null);
+        context.init();
 
         RouteMaxMatchStrategy strategy = new RouteMaxMatchStrategy(context);
 

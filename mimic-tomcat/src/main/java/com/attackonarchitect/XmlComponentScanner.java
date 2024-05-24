@@ -42,6 +42,10 @@ public class XmlComponentScanner implements ComponentScanner {
     private String displayName;
 
     public XmlComponentScanner(String resource) {
+        this(resource, null);
+    }
+
+    public XmlComponentScanner(String resource, String docBase) {
         this.resource = resource;
 
         final String extension = FileUtil.resolveExtension(resource);
@@ -54,7 +58,7 @@ public class XmlComponentScanner implements ComponentScanner {
                 throw new RuntimeException(e);
             }
         } else {
-            this.classLoader = Thread.currentThread().getContextClassLoader();
+            this.classLoader = StringUtil.isBlank(docBase) ? Thread.currentThread().getContextClassLoader() : null;
             this.applicationName = "";
         }
 
@@ -76,7 +80,11 @@ public class XmlComponentScanner implements ComponentScanner {
             url = this.getClass().getResource(this.resource);
         }
         try {
-            document = reader.read(url);
+            try {
+                document = reader.read(url);
+            } catch (NullPointerException e) {
+                document = reader.read(new File(this.resource));
+            }
         } catch (DocumentException e) {
             throw new RuntimeException(e);
         }
@@ -134,8 +142,9 @@ public class XmlComponentScanner implements ComponentScanner {
         servletInformation.setLoadOnStartup(Integer.parseInt(
                 element.elementText("load-on-startup")));
         servletInformation.setInitParams(this.resolveInitParam(element));
+        servletInformation.setName(servletName);
 
-        servletInformation.setClassLoader(this.classLoader);
+        servletInformation.setLoader(this.classLoader);
 
         if (this.webServletComponents.containsKey(servletName)) {
             // 优先解析到了 servlet-mapping, 补充servlet信息

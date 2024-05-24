@@ -16,6 +16,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 /**
  * @description:
@@ -92,12 +93,12 @@ public class ServletInformation extends ContainerBase implements Servlet {
     }
 
     public ClassLoader getClassLoader() {
-        return Optional.ofNullable(this.classLoader).orElseGet(Thread.currentThread()::getContextClassLoader);
+        return this.getLoader();
     }
 
-    public void setClassLoader(ClassLoader classLoader) {
-        this.classLoader = classLoader;
-    }
+//    public void setClassLoader(ClassLoader classLoader) {
+//        this.classLoader = classLoader;
+//    }
 
     public void setServletContext(ServletContext servletContext) {
         if (Objects.isNull(this.instance)) {
@@ -191,9 +192,9 @@ public class ServletInformation extends ContainerBase implements Servlet {
     @Override
     public void setParent(Container container) {
         super.setParent(container);
-        if (container instanceof ServletContext) {
-            this.setServletContext((ServletContext) container);
-        }
+//        if (container instanceof ServletContext) {
+//            this.setServletContext((ServletContext) container);
+//        }
     }
 
     @Override
@@ -221,6 +222,11 @@ public class ServletInformation extends ContainerBase implements Servlet {
     }
 
     @Override
+    public String getName() {
+        return Optional.ofNullable(super.getName()).orElseGet(this::getClazzName);
+    }
+
+    @Override
     public void addChild(Container container) {}
 
     @Override
@@ -235,4 +241,11 @@ public class ServletInformation extends ContainerBase implements Servlet {
 
     @Override
     public void removeChild(Container child) {}
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", ServletInformation.class.getSimpleName() + "[", "]")
+                .add("instance=" + instance)
+                .toString();
+    }
 }

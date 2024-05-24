@@ -73,7 +73,18 @@ public interface FileUtil {
      * @return
      */
     static File resolveFile(String path) {
-        File file = new File(WEB_ROOT_PATH, path);
+        return resolveFile(WEB_ROOT_PATH, path);
+    }
+
+    /**
+     * 查找指定文件
+     *
+     * @param docBase 文档根目录
+     * @param path  文件路径
+     * @return
+     */
+    static File resolveFile(String docBase, String path) {
+        File file = new File(docBase, path);
         if (!file.exists()) {
             try {
                 file = new File(StringUtil.uriDecode(FileUtil.class.getClassLoader()

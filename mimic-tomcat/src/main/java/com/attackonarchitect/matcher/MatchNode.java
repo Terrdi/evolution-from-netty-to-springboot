@@ -214,6 +214,8 @@ class MatchNode {
 
         if (Objects.isNull(p) || p.value == Character.valueOf(END_EOF)) {
             // 没有匹配成功, 进行模糊匹配查找
+            // 匹配得越多, 是该值的可能性越高
+            Collections.reverse(list);
             return searchPossibleTextIndex(list, text, indistinct, separator);
         } else {
             return p.value;

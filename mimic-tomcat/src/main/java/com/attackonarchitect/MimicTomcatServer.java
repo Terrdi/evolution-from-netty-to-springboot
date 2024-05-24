@@ -2,8 +2,10 @@ package com.attackonarchitect;
 
 import com.attackonarchitect.core.StandardHost;
 import com.attackonarchitect.core.WebappClassLoader;
-import com.attackonarchitect.logger.FileLogger;
-import com.attackonarchitect.servlet.ServletManagerFactory;
+import com.attackonarchitect.handler.DefaultMimicTomcatChannelHandler;
+import com.attackonarchitect.handler.MimicHttpInBoundHandler;
+import com.attackonarchitect.utils.AssertUtil;
+import com.attackonarchitect.utils.CommonClassLoader;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -14,16 +16,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-import com.attackonarchitect.context.ServletContext;
-import com.attackonarchitect.context.ServletContextFactory;
-import com.attackonarchitect.handler.DefaultMimicTomcatChannelHandler;
-import com.attackonarchitect.handler.MimicHttpInBoundHandler;
-import com.attackonarchitect.listener.Notifier;
-import com.attackonarchitect.listener.NotifierImpl;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * @description: 启动类
@@ -57,6 +54,15 @@ public class MimicTomcatServer {
         this.webappClassLoaderList.add(classLoader);
     }
 
+    public void addConfig(Class<?> clazz, final String path, final String docBase){
+//        this.scanners.add(new WebComponentScanner(clazz));
+        WebappClassLoader classLoader = new WebappClassLoader();
+        classLoader.setPath(path);
+        classLoader.setDocbase(docBase);
+        classLoader.setComponentScanner(new WebComponentScanner(clazz));
+        this.webappClassLoaderList.add(classLoader);
+    }
+
     public void addConfig(Class<?> clazz){
         this.addConfig(clazz, "/");
     }
@@ -66,13 +72,14 @@ public class MimicTomcatServer {
      *
      * @param configFile 配置文件路径
      */
-    public void addConfig(String configFile, final String path) {
+    public void addConfig(String configFile, final String path, final String docBase) {
         WebappClassLoader classLoader = new WebappClassLoader();
         classLoader.setPath(path);
+        classLoader.setDocbase(docBase);
         if (configFile.endsWith(".xml")) {
-            classLoader.setComponentScanner(new XmlComponentScanner(configFile));
+            classLoader.setComponentScanner(new XmlComponentScanner(configFile, docBase));
         } else if (configFile.endsWith(".jar") || configFile.endsWith(".war")) {
-            classLoader.setComponentScanner(new XmlComponentScanner(configFile));
+            classLoader.setComponentScanner(new XmlComponentScanner(configFile, docBase));
         } else {
             throw new UnsupportedOperationException("不支持的文件格式:  " + configFile);
         }
@@ -80,7 +87,7 @@ public class MimicTomcatServer {
     }
 
     public void addConfig(String configFile){
-        this.addConfig(configFile, "/");
+        this.addConfig(configFile, "/", "");
     }
 
     public void addConfig(ClassLoader classLoader0, final String path) {

@@ -7,8 +7,6 @@ import com.attackonarchitect.servlet.MimicServlet;
 import com.attackonarchitect.servlet.WebServlet;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
@@ -17,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 
 @WebServlet("/hello/*")
-public class FirstServlet extends MimicServlet {
+public class FirstServlet0 extends MimicServlet {
 
     @Override
     protected void doPost(MTRequest req, MTResponse response) {
@@ -39,6 +37,7 @@ public class FirstServlet extends MimicServlet {
         }
 
         response.write(this.getClass().getName() + " inside /hello/*");
+        response.write("这只是测一个请求.");
         response.setCookie("servlet-name", "FirstServlet");
 
         // servlet-class 两分钟后失效

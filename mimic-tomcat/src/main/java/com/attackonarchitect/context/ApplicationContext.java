@@ -56,12 +56,12 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
                 notifier.notifyListeners(sce);
             }
             instance.log("ServletContext created.");
-            instance.init();
+//            instance.init();
 //        }
         return instance;
     }
 
-    private void init() {
+    public void init() {
 //        this.servletMap.put("default", new StandardWrapper(new ServletInformation(new DefaultMimicServlet()), this));
 //        this.servletMap.put("error", new StandardWrapper(new ServletInformation(new ErrorMimicServlet()), this));
 
@@ -70,16 +70,15 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
 
         // 依据loadOnStartup顺序进行初始化
         values.stream()
-                .peek(servletInformation -> {
-                    for (String urlPattern : servletInformation.getUrlPattern()) {
-                        this.servletMatcher.addCharSequence(urlPattern, servletInformation);
-                    }
-                })
+                .peek(this::addChild)
                 .filter(info -> info.getLoadOnStartup() > 0)
                 .sorted(Comparator.comparingInt(ServletInformation::getLoadOnStartup))
-                .forEachOrdered(ServletInformation::loadServlet);
+                .forEachOrdered(servletInformation -> servletInformation.setServletContext(this));
 
-        this.servletMatcher.addCharSequence("/*", new ServletInformation(new DefaultMimicServlet()));
+        ServletInformation defaultServlet = new ServletInformation(new DefaultMimicServlet());
+        defaultServlet.setServletContext(this);
+        defaultServlet.setParent(this);
+        this.servletMatcher.addCharSequence("/*", defaultServlet);
     }
 
     private Map<String, Object> attributeDepot;
@@ -228,6 +227,7 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
             ServletInformation info = (ServletInformation) container;
             for (String urlPattern : info.getUrlPattern()) {
                 this.servletMap.put(urlPattern, new StandardWrapper(info, this));
+                this.servletMatcher.addCharSequence(urlPattern, info);
             }
         }
     }

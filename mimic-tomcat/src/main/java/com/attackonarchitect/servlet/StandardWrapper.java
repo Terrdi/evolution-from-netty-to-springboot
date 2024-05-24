@@ -22,7 +22,7 @@ public class StandardWrapper extends ContainerBase implements Wrapper {
     public StandardWrapper(ServletInformation servlet, ServletContext parent) {
         this.servlet = Objects.requireNonNull(servlet, "无法使用空Servlet对象");
         this.parent = parent;
-        this.servlet.setServletContext(parent);
+        this.servlet.setParent(parent);
     }
 
     @Override

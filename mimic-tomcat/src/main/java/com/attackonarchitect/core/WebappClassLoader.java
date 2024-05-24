@@ -1,13 +1,14 @@
 package com.attackonarchitect.core;
 
 import com.attackonarchitect.ComponentScanner;
-import com.attackonarchitect.context.Container;
-import com.attackonarchitect.context.ServletContext;
-import com.attackonarchitect.context.ServletContextFactory;
+import com.attackonarchitect.context.*;
 import com.attackonarchitect.listener.Notifier;
 import com.attackonarchitect.listener.NotifierImpl;
 import com.attackonarchitect.logger.FileLogger;
+import com.attackonarchitect.utils.StringUtil;
 
+import java.io.File;
+import java.net.MalformedURLException;
 import java.util.Objects;
 
 /**
@@ -24,6 +25,8 @@ public class WebappClassLoader {
     private String docbase;
 
     private Container container;
+
+    private boolean delegated;
 
     public ComponentScanner getComponentScanner() {
         return this.scanner;
@@ -61,6 +64,14 @@ public class WebappClassLoader {
         return "a simple loader";
     }
 
+    public boolean isDelegated() {
+        return delegated;
+    }
+
+    public void setDelegated(boolean delegated) {
+        this.delegated = delegated;
+    }
+
     public void addRepository(String repository) {}
 
     public String[] findRepositories() {
@@ -86,8 +97,22 @@ public class WebappClassLoader {
         Notifier notifier = new NotifierImpl(Objects.requireNonNull(this.getComponentScanner(), "没有找到合适的组件扫描器").getWebListenerComponents());
         this.container = ServletContextFactory.getInstance(this.getComponentScanner(), notifier, new FileLogger());
         ((ServletContext) this.container).setPath(this.getPath());
-        ((ServletContext) this.container).setDocBase(this.getDocbase());
+        String docBase = this.getDocbase();
+        if (StringUtil.isBlank(docBase) && parent instanceof StandardHost) {
+            docBase = ((StandardHost) parent).getHome() + File.separator + this.container.getName();
+        }
+        ((ServletContext) this.container).setDocBase(docBase);
+        File docbase = new File(docBase);
+        File repository = new File(docbase, "WEB-INF" + File.separator + "classes");
+        try {
+            com.attackonarchitect.utils.WebappClassLoader loader = new com.attackonarchitect.utils.WebappClassLoader(repository, parent.getLoader());
+            loader.setDelegate(this.delegated);
+            this.container.setLoader(loader);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
         parent.addChild(this.container);
+        ((ApplicationContext) this.container).init();
     }
 
     public void stop() {}

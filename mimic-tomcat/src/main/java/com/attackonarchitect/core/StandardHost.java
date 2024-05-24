@@ -1,7 +1,5 @@
 package com.attackonarchitect.core;
 
-import com.attackonarchitect.ComponentScanner;
-import com.attackonarchitect.context.ApplicationContext;
 import com.attackonarchitect.context.Container;
 import com.attackonarchitect.context.ContainerBase;
 import com.attackonarchitect.context.ServletContext;
@@ -9,12 +7,14 @@ import com.attackonarchitect.http.HttpMTRequest;
 import com.attackonarchitect.http.HttpMTResponse;
 import com.attackonarchitect.matcher.MatcherSet;
 import com.attackonarchitect.servlet.ServletException;
+import com.attackonarchitect.utils.AssertUtil;
+import com.attackonarchitect.utils.CommonClassLoader;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 主机, 最顶层的容器
@@ -30,6 +30,22 @@ public class StandardHost extends ContainerBase {
     private final MatcherSet hostTree = new MatcherSet();
 
     public StandardHost() {
+        // 设置公共类路径加载器
+        this.home = System.getProperty("minit.home");
+        AssertUtil.isNotBlank(home, "找不到主目录!");
+        System.out.println("home: " + home);
+        File classPath = new File(home);
+        File repository = new File(classPath, "lib");
+        try {
+            CommonClassLoader loader = new CommonClassLoader(repository);
+            if (Boolean.parseBoolean(System.getProperty("minit.delegated"))) {
+                loader.setDelegate(true);
+            }
+            this.setLoader(loader);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("设置类路径失败: " + e.getMessage());
+        }
+
         log("Host created.");
     }
 
@@ -65,5 +81,11 @@ public class StandardHost extends ContainerBase {
             hostTree.addCharSequence(classLoader.getPath(), classLoader);
             classLoader.start(this);
         }
+    }
+
+    private final String home;
+
+    public String getHome() {
+        return this.home;
     }
 }

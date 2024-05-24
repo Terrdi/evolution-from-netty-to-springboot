@@ -10,6 +10,7 @@ import com.attackonarchitect.utils.StringUtil;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
+import java.util.Optional;
 
 /**
  * @description:
@@ -24,7 +25,8 @@ public class DefaultMimicServlet extends MimicServlet {
     protected void doGet(MTRequest req, MTResponse response) throws UnsupportedEncodingException {
         final String uri = StringUtil.uriDecode(req.uri());
         File file;
-        file = FileUtil.resolveFile(uri);
+        final String docBase = Optional.ofNullable(this.getServletContext().getDocBase()).orElse(FileUtil.WEB_ROOT_PATH);
+        file = FileUtil.resolveFile(docBase, uri);
         HttpMTResponse resp = (HttpMTResponse) response;
         resp.setDelegate(new HttpMTFileResponse(resp, file).buildUri(uri));
 
