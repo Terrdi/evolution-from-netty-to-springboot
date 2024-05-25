@@ -10,6 +10,8 @@ import com.attackonarchitect.utils.StringUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
+import java.util.Objects;
+
 /**
  * @description:
  *
@@ -37,6 +39,7 @@ public class DefaultMimicTomcatChannelHandler extends ChannelInboundHandlerAdapt
 
         this.container.invoke(request, response);
 
+        response.flush();
         ctx.flush();
     }
 
@@ -47,6 +50,9 @@ public class DefaultMimicTomcatChannelHandler extends ChannelInboundHandlerAdapt
     }
 
     private void notifyRequestListener(ServletContext servletContext, ServletRequestEvent sre) {
+        if (Objects.isNull(servletContext)) {
+            return;
+        }
         Notifier notifier = (Notifier) servletContext.getAttribute("notifier");
         notifier.notifyListeners(sre);
     }

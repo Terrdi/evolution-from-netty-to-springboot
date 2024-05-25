@@ -1,5 +1,6 @@
 package com.attackonarchitect.utils;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Objects;
@@ -102,5 +103,20 @@ public interface StringUtil {
             index++;
         }
         return index > 0 ? uri.substring(0, index) : uri;
+    }
+
+    /**
+     * 解析出主要的文件名称, 去除后缀
+     * @param fileName
+     * @return
+     */
+    static String resolveSimpleFileName(final String fileName) {
+        int startIndex = fileName.lastIndexOf(File.separatorChar);
+        int endIndex = fileName.lastIndexOf('.');
+        if (endIndex < 0) {
+            endIndex = fileName.length();
+        }
+
+        return fileName.substring(startIndex + 1, endIndex);
     }
 }

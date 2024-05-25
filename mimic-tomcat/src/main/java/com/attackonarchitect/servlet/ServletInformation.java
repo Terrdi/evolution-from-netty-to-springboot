@@ -13,10 +13,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.StringJoiner;
+import java.util.*;
 
 /**
  * @description:
@@ -24,10 +21,10 @@ import java.util.StringJoiner;
  *  抽象servlet的信息，包括类名，urlPattern，loadOnStartup，initParams
  *
  */
-public class ServletInformation extends ContainerBase implements Servlet {
+public class ServletInformation extends ContainerBase implements Servlet, ServletConfig {
     private String clazzName;
     private String[] urlPattern;
-    private int loadOnStartup;
+    private int loadOnStartup = -1;
     private Map<String, String> initParams;
 
     private ClassLoader classLoader;
@@ -155,19 +152,22 @@ public class ServletInformation extends ContainerBase implements Servlet {
                             String setterName = "set" + key.substring(0, 1).toUpperCase() + key.substring(1);
                             Method method = finalClazz.getMethod(setterName,value.getClass());
                             method.invoke(finalInstance,value);
-                        } catch (NoSuchMethodException e) {
-                            throw new RuntimeException(e);
-                        } catch (InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        } catch (IllegalAccessException e) {
+                        } catch (NoSuchMethodException ignore) {
+//                            throw new RuntimeException(e);
+                        } catch (InvocationTargetException | IllegalAccessException e) {
                             throw new RuntimeException(e);
                         }
                     });
                 }
 
-                this.instance.init();
+                this.instance.init(this);
             } catch (Exception e) {
+                System.err.println("加载 " + clazzName + " 失败.");
                 e.printStackTrace();
+            }
+
+            if (this.parent instanceof ServletContext) {
+                this.setServletContext((ServletContext) this.parent);
             }
         }
 
@@ -198,17 +198,38 @@ public class ServletInformation extends ContainerBase implements Servlet {
     }
 
     @Override
-    public ServletContext getServletContext() {
-        if (Objects.isNull(this.instance)) {
-            this.loadServlet();
-        }
-
-        return this.instance.getServletContext();
+    public String getServletName() {
+        return this.getName();
     }
 
     @Override
-    public void init() {
-        this.instance.init();
+    public ServletContext getServletContext() {
+        ServletContext ret = Optional.ofNullable(this.instance).map(Servlet::getServletContext).orElse(null);
+        if (Objects.isNull(ret)) {
+            Container parent = this.getParent();
+            if (parent instanceof ServletContext) {
+                ret = (ServletContext) parent;
+            } else {
+                this.loadServlet();
+                ret = this.instance.getServletContext();
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public Iterator<String> getInitParameterNames() {
+        return this.initParams.keySet().iterator();
+    }
+
+    @Override
+    public String getInitParameter(String name) {
+        return this.initParams.get(name);
+    }
+
+    @Override
+    public void init(ServletConfig servletConfig) {
+        this.instance.init(servletConfig);
     }
 
     @Override

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Server>
+    <Connector port="9999" />
+    <Host name="localhost" appBase="/tmp/mini-tomcat">
+
+    </Host>
+</Server>

@@ -1,14 +1,19 @@
 package com.attackonarchitect.core;
 
 import com.attackonarchitect.ComponentScanner;
+import com.attackonarchitect.SpiComponentScanner;
+import com.attackonarchitect.WebComponentScanner;
+import com.attackonarchitect.XmlComponentScanner;
 import com.attackonarchitect.context.*;
 import com.attackonarchitect.listener.Notifier;
 import com.attackonarchitect.listener.NotifierImpl;
 import com.attackonarchitect.logger.FileLogger;
+import com.attackonarchitect.utils.JarClassLoader;
 import com.attackonarchitect.utils.StringUtil;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Objects;
 
 /**
@@ -94,7 +99,7 @@ public class WebappClassLoader {
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
-        Notifier notifier = new NotifierImpl(Objects.requireNonNull(this.getComponentScanner(), "没有找到合适的组件扫描器").getWebListenerComponents());
+        NotifierImpl notifier = new NotifierImpl(Objects.requireNonNull(this.getComponentScanner(), "没有找到合适的组件扫描器").getWebListenerComponents());
         this.container = ServletContextFactory.getInstance(this.getComponentScanner(), notifier, new FileLogger());
         ((ServletContext) this.container).setPath(this.getPath());
         String docBase = this.getDocbase();
@@ -103,17 +108,66 @@ public class WebappClassLoader {
         }
         ((ServletContext) this.container).setDocBase(docBase);
         File docbase = new File(docBase);
-        File repository = new File(docbase, "WEB-INF" + File.separator + "classes");
+        File repository = docbase.isFile() ? docbase : new File(docbase, "WEB-INF" + File.separator + "classes");
         try {
-            com.attackonarchitect.utils.WebappClassLoader loader = new com.attackonarchitect.utils.WebappClassLoader(repository, parent.getLoader());
+            com.attackonarchitect.utils.WebappClassLoader loader = new com.attackonarchitect.utils.WebappClassLoader
+                    (repository, parent.getLoader());
             loader.setDelegate(this.delegated);
             this.container.setLoader(loader);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
         parent.addChild(this.container);
+
+        notifier.init(this.getComponentScanner().getWebListenerComponents(), this.container);
         ((ApplicationContext) this.container).init();
     }
 
     public void stop() {}
+
+    public static ComponentScanner resolve(File file) {
+        ComponentScanner ret = null;
+        if (file.isFile()) {
+            JarClassLoader classLoader = null;
+            // 以jar或者war方式放在该位置
+            try {
+                classLoader = new JarClassLoader(file, null);
+                // 尝试解析出xml
+                URL url = classLoader.getResource("web.xml");
+                if (Objects.isNull(url)) {
+                    url = classLoader.getResource("WEB-INF/web.xml");
+                }
+                if (Objects.nonNull(url)) {
+                    ret = new XmlComponentScanner(file.getPath());
+                }
+            } catch (MalformedURLException e) {
+                throw new RuntimeException("解析jar包: " + file.getPath() + " 失败!");
+            }
+
+            // 尝试注解启动
+            if (Objects.isNull(ret)) {
+                String mainClass = classLoader.getMainClass();
+                try {
+                    if (StringUtil.isNotBlank(mainClass)) {
+                        ret = new WebComponentScanner(classLoader.loadClass(mainClass));
+                    } else {
+                        ret = new SpiComponentScanner(classLoader);
+                    }
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException("解析jar包主类: " + file.getPath() + " 失败!");
+                }
+            }
+        } else {
+            // 是否存在web.xml文件
+            File webXml = new File(file, "web.xml");
+            if (!webXml.exists() || !webXml.isFile()) {
+                webXml = new File(file, "WEB-INF" + File.separator + "web.xml");
+            }
+            if (webXml.exists() && webXml.isFile()) {
+                ret = new XmlComponentScanner(webXml.getPath(), file.getName());
+            }
+        }
+
+        return ret;
+    }
 }

@@ -2,6 +2,7 @@ package com.attackonarchitect;
 
 import com.attackonarchitect.servlet.ServletInformation;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,6 +48,14 @@ public interface ComponentScanner {
      * @return
      */
     Map<String,Integer> getWebFilterComponentsOrder();
+
+    /**
+     * 获取上下文参数
+     * @return
+     */
+    default Map<String, String> getContextParams() {
+        return Collections.emptyMap();
+    }
 
     /**
      * 获取应用名称

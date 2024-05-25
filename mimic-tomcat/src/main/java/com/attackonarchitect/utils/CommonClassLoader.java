@@ -24,11 +24,11 @@ public class CommonClassLoader extends URLClassLoader {
     }
 
     public CommonClassLoader(File file) throws MalformedURLException {
-        this(new URL[]{file.toURI().toURL()});
+        this(resolveUrls(file));
     }
 
     public CommonClassLoader(File file, ClassLoader parent) throws MalformedURLException {
-        this(new URL[]{file.toURI().toURL()}, parent);
+        this(resolveUrls(file), parent);
     }
 
     public CommonClassLoader(URL[] urls, ClassLoader parent) {
@@ -88,6 +88,27 @@ public class CommonClassLoader extends URLClassLoader {
         try {
              ret = parent.loadClass(name);
         } catch (ClassNotFoundException ignore) {
+        }
+        return ret;
+    }
+
+    private static URL[] resolveUrls(File file) throws MalformedURLException {
+        URL[] ret;
+        if (file.isFile()) {
+            ret = new URL[1];
+            ret[0] = file.toURI().toURL();
+        } else {
+            File[] files = file.listFiles((dir, name) -> name.endsWith(".jar"));
+            if (Objects.nonNull(files) && files.length > 0) {
+                ret = new URL[files.length];
+                for (int i = 0; i < files.length; i++) {
+                    File jarFile = files[i];
+                    ret[i] = jarFile.toURI().toURL();
+                }
+            } else {
+                ret = new URL[1];
+                ret[0] = file.toURI().toURL();
+            }
         }
         return ret;
     }

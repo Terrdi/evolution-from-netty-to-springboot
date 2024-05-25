@@ -180,4 +180,12 @@ public abstract class ContainerBase implements Container {
             notifier.notifyListeners(event);
         }
     }
+
+    public void stop() {
+        Container[] containers = this.findChildren();
+        for (Container child : containers) {
+            child.stop();
+            this.removeChild(child);
+        }
+    }
 }

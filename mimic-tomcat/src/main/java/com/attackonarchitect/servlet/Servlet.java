@@ -19,5 +19,5 @@ public interface Servlet {
     /**
      * 初始化方法
      */
-    void init();
+    void init(ServletConfig servletConfig);
 }

@@ -16,10 +16,15 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -27,11 +32,13 @@ import java.util.List;
  * 使用netty-server 监听接收请求,作为Connector的简单替代实现
  */
 public class MimicTomcatServer {
-    private final int PORT;
+    private int PORT = 8080;
 
     public MimicTomcatServer(int PORT) {
         this.PORT = PORT;
     }
+
+    public MimicTomcatServer() {}
 
     /**
      * 组件扫描器servlet,filter,listener
@@ -112,6 +119,57 @@ public class MimicTomcatServer {
 //        ServletManagerFactory.getInstance(scanner,servletContext);
 
         runNetty();
+    }
+
+    /**
+     * 通过配置文件启动tomcat服务器
+     *
+     * @param conf 配置文件路径
+     */
+    public void start(final String conf) {
+        this.start(new File(conf));
+    }
+
+    /**
+     * 通过配置文件启动tomcat服务器
+     *
+     * @param conf 配置文件
+     */
+    public void start(final File conf) {
+        AssertUtil.state(conf.exists(), "文件: " + conf.getAbsolutePath() + " 不存在!");
+        AssertUtil.state(conf.canRead(), "文件: " + conf.getAbsolutePath() + " 无读取权限!");
+
+        // 解析出当前文件
+        // 读取出当前端口
+        SAXReader reader = new SAXReader();
+        Document document = null;
+
+        try {
+            document = reader.read(conf);
+        } catch (DocumentException e) {
+            throw new RuntimeException("文件: " + conf.getAbsolutePath() + " 解析错误!", e);
+        }
+
+        Iterator<Element> iterator = document.getRootElement().elementIterator();
+        while (iterator.hasNext()) {
+            Element element = iterator.next();
+            final String name = element.getName();
+
+            switch (name) {
+                case "Connector":
+                    this.PORT = Integer.parseInt(element.attribute("port").getText());
+                    break;
+                case "Host":
+                    this.host.setHome(element.attribute("appBase").getText());
+                    break;
+            }
+        }
+
+        this.host.start();
+
+        runNetty();
+
+        this.host.stop();
     }
 
     private void runNetty(){

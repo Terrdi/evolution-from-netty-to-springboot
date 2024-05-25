@@ -18,6 +18,10 @@ public class MatcherSet {
         this.head.addCharSequence(sequence, value);
     }
 
+    public void tryAddCharSequence(final CharSequence sequence, final Object value) {
+        this.head.tryAddCharSequence(sequence, value);
+    }
+
     public boolean strictMatch(final CharSequence text) {
         return this.head.strictMatch(text);
     }

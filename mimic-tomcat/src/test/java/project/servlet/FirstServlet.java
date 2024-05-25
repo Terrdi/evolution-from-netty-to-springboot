@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 
 @WebServlet("/hello/*")
-public class FirstServlet0 extends MimicServlet {
+public class FirstServlet extends MimicServlet {
 
     @Override
     protected void doPost(MTRequest req, MTResponse response) {

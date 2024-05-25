@@ -71,6 +71,21 @@ class MatchNode {
         p.value = value;
     }
 
+    public void tryAddCharSequence(CharSequence string, Object value) {
+        MatchNode p = this;
+        for (int i = 0; i < string.length(); i++) {
+            char c = string.charAt(i);
+            AssertUtil.state(c != END_EOF, "不能包含结束字符");
+            p = p.createNext(c);
+        }
+
+        p.createNext(END_EOF);
+        if (p.value != Character.valueOf(END_EOF)) {
+            return;
+        }
+        p.value = value;
+    }
+
     public boolean strictMatch(final CharSequence text) {
         MatchNode p = this;
         for (int i = 0; i < text.length(); i++) {

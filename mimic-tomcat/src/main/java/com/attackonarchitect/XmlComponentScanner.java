@@ -33,6 +33,8 @@ public class XmlComponentScanner implements ComponentScanner {
 
     private final Map<String, Set<String>> webFilterComponents = new HashMap<>();
 
+    private final Map<String, String> contextParams = new HashMap<>();
+
     private final String resource;
 
     private final ClassLoader classLoader;
@@ -75,7 +77,7 @@ public class XmlComponentScanner implements ComponentScanner {
 
         URL url;
         if (this.classLoader instanceof JarClassLoader) {
-            url = this.classLoader.getResource("WEB-INF/web.xml");
+            url = ((JarClassLoader) this.classLoader).findResource("WEB-INF/web.xml");
         } else {
             url = this.getClass().getResource(this.resource);
         }
@@ -121,6 +123,9 @@ public class XmlComponentScanner implements ComponentScanner {
                 case "filter-mapping":
                     this.filterMapping(currElement);
                     break;
+                case "context-param":
+                    this.contextParam(currElement);
+                    break;
             }
         }
     }
@@ -139,8 +144,11 @@ public class XmlComponentScanner implements ComponentScanner {
         }
 
         servletInformation.setClazzName(servletClass);
-        servletInformation.setLoadOnStartup(Integer.parseInt(
-                element.elementText("load-on-startup")));
+        try {
+            servletInformation.setLoadOnStartup(Integer.parseInt(
+                    element.elementText("load-on-startup")));
+        } catch (NullPointerException | NumberFormatException ignore) {
+        }
         servletInformation.setInitParams(this.resolveInitParam(element));
         servletInformation.setName(servletName);
 
@@ -195,6 +203,10 @@ public class XmlComponentScanner implements ComponentScanner {
             ret.put(paramName, paramValue);
         }
         return ret;
+    }
+
+    private void contextParam(final Element element) {
+        this.contextParams.put(element.elementText("param-name"), element.elementText("param-value"));
     }
 
     private void welcomeFileList(final Element element) {
@@ -289,5 +301,10 @@ public class XmlComponentScanner implements ComponentScanner {
     public String getApplicationName() {
         return StringUtil.isBlank(this.applicationName) ? this.displayName :
                 this.applicationName;
+    }
+
+    @Override
+    public Map<String, String> getContextParams() {
+        return this.contextParams;
     }
 }

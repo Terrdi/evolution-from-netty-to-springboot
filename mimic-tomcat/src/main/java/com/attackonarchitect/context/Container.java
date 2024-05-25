@@ -91,4 +91,6 @@ public interface Container {
     Logger getLogger();
 
     void setLogger(Logger logger);
+
+    void stop();
 }

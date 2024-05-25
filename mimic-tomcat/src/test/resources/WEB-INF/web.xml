@@ -35,6 +35,21 @@
         <url-pattern>/hello/*</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>second</servlet-name>
+        <servlet-class>project.servlet.subservlet.SecondServlet</servlet-class>
+        <!--
+        <init-param>
+            <param-name>testParamName</param-name>
+            <param-value>testParamValue</param-value>
+        </init-param>
+        -->
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>second</servlet-name>
+        <url-pattern>/hello/a/*</url-pattern>
+    </servlet-mapping>
+
     <!--配置过滤器-->
     <filter>
         <filter-name>firstFilter</filter-name>

@@ -55,5 +55,5 @@ public abstract class MimicServlet implements Servlet{
 
 
     @Override
-    public void init() {}
+    public void init(ServletConfig servletConfig) {}
 }

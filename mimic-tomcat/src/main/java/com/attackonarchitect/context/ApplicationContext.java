@@ -17,11 +17,14 @@ import com.attackonarchitect.listener.webcontext.ServletContextEvent;
 import com.attackonarchitect.logger.Logger;
 import com.attackonarchitect.matcher.MatcherSet;
 import com.attackonarchitect.servlet.*;
+import com.attackonarchitect.utils.JarClassLoader;
 import com.attackonarchitect.utils.StringUtil;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * @description:
@@ -46,15 +49,9 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
             instance.setAttribute("notifier",notifier);
             instance.setLogger(logger);
             instance.setName(scanner.getApplicationName());
-            ServletContextEvent sce = new ServletContextEvent();
-            sce.setSource(instance);
-            sce.setName(scanner.getApplicationName());
-            //触发通知，但是放在这里通知其实不合理
-            //因为万一有其他的 ServletContext 实现
-            //所以还是放在工厂里面更好感觉。
-            if (Objects.nonNull(notifier)) {
-                notifier.notifyListeners(sce);
-            }
+        scanner.getContextParams().forEach(instance::setAttribute);
+
+
             instance.log("ServletContext created.");
 //            instance.init();
 //        }
@@ -64,6 +61,20 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
     public void init() {
 //        this.servletMap.put("default", new StandardWrapper(new ServletInformation(new DefaultMimicServlet()), this));
 //        this.servletMap.put("error", new StandardWrapper(new ServletInformation(new ErrorMimicServlet()), this));
+
+        ServletContextEvent sce = new ServletContextEvent();
+        sce.setSource(this);
+        sce.setName(this.getName());
+        //触发通知，但是放在这里通知其实不合理
+        //因为万一有其他的 ServletContext 实现
+        //所以还是放在工厂里面更好感觉。
+        if (Objects.nonNull(notifier)) {
+            try {
+                notifier.notifyListeners(sce).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         //新增 loadOnStartup 初始化功能
         Collection<ServletInformation> values = provider.getServletInformationMap().values();
@@ -78,7 +89,7 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
         ServletInformation defaultServlet = new ServletInformation(new DefaultMimicServlet());
         defaultServlet.setServletContext(this);
         defaultServlet.setParent(this);
-        this.servletMatcher.addCharSequence("/*", defaultServlet);
+        this.servletMatcher.tryAddCharSequence("/*", defaultServlet);
     }
 
     private Map<String, Object> attributeDepot;
@@ -118,8 +129,8 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
     public Notifier getNotifiler() {
         return Optional.ofNullable(this.notifier).orElseGet(() -> new Notifier() {
             @Override
-            public void notifyListeners(Event event) {
-
+            public Future<?> notifyListeners(Event event) {
+                return null;
             }
 
             @Override
@@ -129,6 +140,11 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
 
             @Override
             public void removeListener(EventListener eventListener) {
+
+            }
+
+            @Override
+            public void stop() {
 
             }
         });
@@ -229,6 +245,11 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
                 this.servletMap.put(urlPattern, new StandardWrapper(info, this));
                 this.servletMatcher.addCharSequence(urlPattern, info);
             }
+
+            ClassLoader childLoader = container.getLoader();
+            if (childLoader instanceof JarClassLoader) {
+                container.setLoader(((JarClassLoader) childLoader).clone(this.getLoader()));
+            }
         }
     }
 
@@ -291,5 +312,13 @@ public class ApplicationContext extends ContainerBase implements ServletRegister
 
     public MatcherSet getServletMatcher() {
         return this.servletMatcher;
+    }
+
+    @Override
+    public void stop() {
+        System.out.println("Context[" + this.getName() + "] exit....");
+
+        this.notifier.stop();
+        super.stop();
     }
 }
